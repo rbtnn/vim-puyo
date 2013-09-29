@@ -1,7 +1,7 @@
 
 # puyo.vim
 
-これは(Vim Advent Calendar 2012)[http://atnd.org/events/33746] : ATND 304日目になります。
+これは[Vim Advent Calendar 2012](http://atnd.org/events/33746) : ATND 304日目になります。
 
 ![](https://raw.github.com/rbtnn/puyo.vim/master/puyo.png)
 
