@@ -55,7 +55,7 @@ function! s:buffer_uniq_open(bname,lines,mode) " {{{
   endif
 
   if a:mode ==# 'w'
-    silent % delete
+    silent % delete _
     call append(0,a:lines)
   elseif a:mode ==# 'a'
     call append('$',a:lines)
