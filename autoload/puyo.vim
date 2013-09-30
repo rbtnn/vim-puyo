@@ -94,10 +94,8 @@ endfunction " }}}
 
 function! s:next_puyo() " {{{
   " s:R ~ s:Y
-  let p1 = s:Random.rand() % 4
-  let p1 = p1 < 0 ? -p1 : p1
-  let p2 = s:Random.rand() % 4
-  let p2 = p2 < 0 ? -p2 : p2
+  let p1 = abs(s:Random.rand()) % 4
+  let p2 = abs(s:Random.rand()) % 4
   return [
   \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
   \   { 'row' : 0, 'col' : 4, 'kind' : p2 },
