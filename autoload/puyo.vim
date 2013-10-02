@@ -29,18 +29,18 @@ let s:chain_voices = [
 \ 'ばよえ～ん',
 \ ]
 
-function! s:buffer_nrlist()
+function! s:buffer_nrlist() " {{{
   return  filter(range(1, bufnr("$")),"bufexists(v:val) && buflisted(v:val)")
-endfunction
-function! s:buffer_escape(bname)
+endfunction " }}}
+function! s:buffer_escape(bname) " {{{
   return '^' . join(map(split(a:bname, '\zs'), '"[".v:val."]"'), '') . '$'
-endfunction
-function! s:buffer_nr(bname)
+endfunction " }}}
+function! s:buffer_nr(bname) " {{{
   return bufnr(s:buffer_escape(a:bname))
-endfunction
-function! s:buffer_winnr(bname)
+endfunction " }}}
+function! s:buffer_winnr(bname) " {{{
   return bufwinnr(s:buffer_escape(a:bname))
-endfunction
+endfunction " }}}
 function! s:buffer_uniq_open(bname,lines,mode) " {{{
   let curr_bufname = bufname('%')
 
@@ -116,12 +116,13 @@ function! s:redraw(do_init) " {{{
           \   'next2' : s:next_puyo(),
           \ }
 
-    nnoremap <buffer> j :call <sid>key_down() \| call <sid>check()<cr>
-    " nnoremap <buffer> k :call <sid>key_up()<cr>
-    nnoremap <buffer> h :call <sid>key_left()<cr>
-    nnoremap <buffer> l :call <sid>key_right()<cr>
-    nnoremap <buffer> z :call <sid>key_turn(0)<cr>
-    nnoremap <buffer> x :call <sid>key_turn(1)<cr>
+    nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
+    nnoremap <silent><buffer> k :call <sid>key_up()<cr>
+    nnoremap <silent><buffer> h :call <sid>key_left()<cr>
+    nnoremap <silent><buffer> l :call <sid>key_right()<cr>
+    nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
+    nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
+    nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
 
     augroup Puyo
       autocmd!
@@ -306,6 +307,14 @@ endfunction " }}}
 function! s:key_left() " {{{
   call s:move_puyo(0,-1,b:session.dropping)
   call s:redraw(0)
+endfunction " }}}
+function! s:key_quit() " {{{
+  if &filetype ==# "puyo"
+    augroup Puyo
+      autocmd!
+    augroup END
+    quit
+  endif
 endfunction " }}}
 
 function! s:auto() " {{{
