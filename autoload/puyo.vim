@@ -19,6 +19,8 @@ let s:W = 5
 let s:FIELD_COL = 6
 let s:FIELD_ROW = 13
 
+let s:HIDDEN_ROW = 2
+
 let s:chain_voices = [
 \ 'えいっ',
 \ 'ファイヤー',
@@ -65,8 +67,8 @@ function! s:buffer_uniq_open(bname,lines,mode) " {{{
 endfunction " }}}
 
 function! s:make_field_array(contained_dropping) " {{{
-  let f = [repeat([s:W],s:FIELD_COL+2)]
-  for h in range(1,s:FIELD_ROW)
+  let f = []
+  for h in range(1,s:FIELD_ROW+s:HIDDEN_ROW)
     let f += [[s:W]+repeat([s:F],s:FIELD_COL)+[s:W]]
   endfor
   let f += [repeat([s:W],s:FIELD_COL+2)]
@@ -78,17 +80,33 @@ function! s:make_field_array(contained_dropping) " {{{
 endfunction " }}}
 function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
+
+  let is_gameover = 1
+  for n in range(s:HIDDEN_ROW,s:FIELD_ROW)
+    if f[n][3] == s:F
+      let is_gameover = 0
+    endif
+  endfor
+  if is_gameover
+    return -1
+  endif
+
   for puyo in a:puyos
-    if s:FIELD_ROW < puyo.row + a:row || puyo.row + a:row <= 0
+    if s:FIELD_ROW + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row <= 0
       return 0
     endif
     if s:FIELD_COL < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
+
     if f[puyo.row + a:row][puyo.col + a:col] != s:F
+      if f[puyo.row + a:row][puyo.col + a:col] == s:W && puyo.row + a:row < s:HIDDEN_ROW
+        return 1
+      endif
       return 0
     endif
   endfor
+
   return 1
 endfunction " }}}
 
@@ -97,9 +115,9 @@ function! s:next_puyo() " {{{
   let p1 = abs(s:Random.rand()) % 4
   let p2 = abs(s:Random.rand()) % 4
   return [
-  \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
-  \   { 'row' : 0, 'col' : 4, 'kind' : p2 },
-  \ ]
+        \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
+        \   { 'row' : 1, 'col' : 3, 'kind' : p2 },
+        \ ]
 endfunction " }}}
 function! s:redraw(do_init) " {{{
   if a:do_init
@@ -130,13 +148,19 @@ function! s:redraw(do_init) " {{{
     augroup END
   endif
 
-  let rtn = []
   let field = s:make_field_array(1)
+
+  for i in range(0,s:HIDDEN_ROW-1)
+    let field[i] = repeat([s:W], s:FIELD_COL+2)
+  endfor
+
   let field[1] += [s:W,s:W                    ,s:W,s:W                    ,s:W]
   let field[2] += [s:W,b:session.next1[0].kind,s:W,s:W                    ,s:W]
   let field[3] += [s:W,b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
   let field[4] += [s:W,s:W                    ,s:W,b:session.next2[1].kind,s:W]
   let field[5] += [s:W,s:W                    ,s:W,s:W                    ,s:W]
+
+  let rtn = []
   for row in field
     let str = join(row,"")
     let str = substitute(str,s:R,"@R","g")
@@ -154,17 +178,20 @@ function! s:redraw(do_init) " {{{
   redraw!
 endfunction " }}}
 function! s:drop() " {{{
+  " initialize a field for setting puyos.
   let f = []
-  for r in range(1,s:FIELD_ROW+2)
+  for r in range(1,s:HIDDEN_ROW+s:FIELD_ROW+1)
     let f += [repeat([s:F],s:FIELD_COL+2)]
   endfor
   for puyo in b:session.puyos
     let f[puyo.row][puyo.col] = puyo.kind
   endfor
+
+  " drop
   for c in range(s:FIELD_COL,1,-1)
     while 1
       let b = 0
-      for r in range(1,s:FIELD_ROW-1)
+      for r in range(0,s:FIELD_ROW)
         if f[r+1][c] == s:F && f[r][c] != s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
@@ -176,9 +203,11 @@ function! s:drop() " {{{
       endif
     endwhile
   endfor
+
+  " rebuild puyos
   let new_puyos = []
   for c in range(1,s:FIELD_COL)
-    for r in range(1,s:FIELD_ROW)
+    for r in range(1,s:FIELD_ROW+s:HIDDEN_ROW)
       if f[r][c] != s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
@@ -186,7 +215,7 @@ function! s:drop() " {{{
   endfor
   let b:session.puyos = new_puyos
 endfunction " }}}
-function! s:recur_chin(puyos,row,col,kind) " {{{
+function! s:recur_chain(puyos,row,col,kind) " {{{
   let cnt = 0
   if a:kind != s:F
     for i in range(0,len(a:puyos)-1)
@@ -195,16 +224,16 @@ function! s:recur_chin(puyos,row,col,kind) " {{{
         let a:puyos[i].kind = s:F
       endif
       if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
-        let cnt += s:recur_chin(a:puyos,a:row,a:col-1,a:kind)
+        let cnt += s:recur_chain(a:puyos,a:row,a:col-1,a:kind)
       endif
       if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
-        let cnt += s:recur_chin(a:puyos,a:row,a:col+1,a:kind)
+        let cnt += s:recur_chain(a:puyos,a:row,a:col+1,a:kind)
       endif
       if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
-        let cnt += s:recur_chin(a:puyos,a:row-1,a:col,a:kind)
+        let cnt += s:recur_chain(a:puyos,a:row-1,a:col,a:kind)
       endif
       if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
-        let cnt += s:recur_chin(a:puyos,a:row+1,a:col,a:kind)
+        let cnt += s:recur_chain(a:puyos,a:row+1,a:col,a:kind)
       endif
     endfor
   endif
@@ -222,7 +251,7 @@ function! s:chain() " {{{
     let total = 0
 
     for puyo in prev_ps
-      let n = s:recur_chin(curr_ps,puyo.row,puyo.col,puyo.kind)
+      let n = s:recur_chain(curr_ps,puyo.row,puyo.col,puyo.kind)
       if 4 <= n
         let is_chained = 1
         let total += n
@@ -247,7 +276,8 @@ function! s:chain() " {{{
   return chain_count
 endfunction " }}}
 function! s:check() " {{{
-  if ! s:movable(b:session.dropping,1,0)
+  let status = s:movable(b:session.dropping,1,0)
+  if status == 0
     let b:session.puyos += b:session.dropping
     let b:session.dropping = b:session.next1
     let b:session.next1 = b:session.next2
@@ -283,17 +313,20 @@ function! s:key_turn(is_right) " {{{
   call s:redraw(0)
 endfunction " }}}
 function! s:move_puyo(row,col,puyos) " {{{
-  if ! s:movable(a:puyos,a:row,a:col)
-    return 0
+  let status = s:movable(a:puyos,a:row,a:col)
+  if status == 1
+    for puyo in a:puyos
+      let puyo.row += a:row
+      let puyo.col += a:col
+    endfor
   endif
-  for puyo in a:puyos
-    let puyo.row += a:row
-    let puyo.col += a:col
-  endfor
-  return 1
+  return status
 endfunction " }}}
 function! s:key_down() " {{{
-  call s:move_puyo(1,0,b:session.dropping)
+  let status = s:move_puyo(1,0,b:session.dropping)
+  if -1 == status
+    let b:session.text = 'ばたんきゅー'
+  endif
   call s:redraw(0)
 endfunction " }}}
 function! s:key_up() " {{{
