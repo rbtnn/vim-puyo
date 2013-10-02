@@ -135,7 +135,7 @@ function! s:redraw(do_init) " {{{
           \ }
 
     nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
-    nnoremap <silent><buffer> k :call <sid>key_up()<cr>
+    nnoremap <silent><buffer> k :call <sid>key_quickdrop()<cr>
     nnoremap <silent><buffer> h :call <sid>key_left()<cr>
     nnoremap <silent><buffer> l :call <sid>key_right()<cr>
     nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
@@ -329,8 +329,9 @@ function! s:key_down() " {{{
   endif
   call s:redraw(0)
 endfunction " }}}
-function! s:key_up() " {{{
-  call s:move_puyo(-1,0,b:session.dropping)
+function! s:key_quickdrop() " {{{
+  while s:move_puyo(1,0,b:session.dropping)
+  endwhile
   call s:redraw(0)
 endfunction " }}}
 function! s:key_right() " {{{
