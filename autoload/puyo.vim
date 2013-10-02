@@ -92,7 +92,7 @@ function! s:movable(puyos,row,col) " {{{
   endif
 
   for puyo in a:puyos
-    if s:FIELD_ROW + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row <= 0
+    if s:FIELD_ROW + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
     if s:FIELD_COL < puyo.col + a:col || puyo.col + a:col <= 0
@@ -135,7 +135,7 @@ function! s:redraw(do_init) " {{{
           \ }
 
     nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
-    nnoremap <silent><buffer> k :call <sid>key_quickdrop()<cr>
+    nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
     nnoremap <silent><buffer> h :call <sid>key_left()<cr>
     nnoremap <silent><buffer> l :call <sid>key_right()<cr>
     nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
@@ -330,7 +330,14 @@ function! s:key_down() " {{{
   call s:redraw(0)
 endfunction " }}}
 function! s:key_quickdrop() " {{{
-  while s:move_puyo(1,0,b:session.dropping)
+  while 1
+    let status = s:move_puyo(1,0,b:session.dropping)
+    if -1 == status
+      let b:session.text = 'ばたんきゅー'
+      break
+    elseif 0 == status
+      break
+    endif
   endwhile
   call s:redraw(0)
 endfunction " }}}
