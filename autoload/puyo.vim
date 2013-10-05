@@ -133,8 +133,7 @@ function! s:redraw(do_init) " {{{
     setlocal filetype=puyo
 
     let b:session = {
-          \   'puyos' : [
-          \   ],
+          \   'puyos' : [],
           \   'n_chain_text' : '',
           \   'voice_text' : '',
           \   'dropping' : s:next_puyo(),
@@ -299,12 +298,9 @@ function! s:check() " {{{
   endif
 endfunction " }}}
 
-function! s:key_turn(is_right) " {{{
+function! s:turn_puyo2(is_right) " {{{
   let state = [ b:session.dropping[0].row - b:session.dropping[1].row,
         \       b:session.dropping[0].col - b:session.dropping[1].col ]
-
-  let saved_dropping_puyos = deepcopy(b:session.dropping)
-
   if state == [0,-1]
     let b:session.dropping[1].row = b:session.dropping[0].row + (a:is_right ? 1 : -1)
     let b:session.dropping[1].col = b:session.dropping[0].col
@@ -318,9 +314,39 @@ function! s:key_turn(is_right) " {{{
     let b:session.dropping[1].row = b:session.dropping[0].row
     let b:session.dropping[1].col = b:session.dropping[0].col + (a:is_right ? 1 : -1)
   endif
+endfunction " }}}
+
+function! s:key_turn(is_right) " {{{
+  let saved_dropping_puyos = deepcopy(b:session.dropping)
+
+  call s:turn_puyo2(a:is_right)
 
   if ! s:movable(b:session.dropping,0,0)
     let b:session.dropping = saved_dropping_puyos
+
+    " left
+    if 1 == s:move_puyo(0,-1,b:session.dropping)
+      call s:turn_puyo2(a:is_right)
+      if ! s:movable(b:session.dropping,0,0)
+        let b:session.dropping = saved_dropping_puyos
+      endif
+
+    " right
+    elseif 1 == s:move_puyo(0,1,b:session.dropping)
+      call s:turn_puyo2(a:is_right)
+      if ! s:movable(b:session.dropping,0,0)
+        let b:session.dropping = saved_dropping_puyos
+      endif
+
+    else
+      call s:turn_puyo2(a:is_right)
+      call s:turn_puyo2(a:is_right)
+      if ! s:movable(b:session.dropping,0,0)
+        let b:session.dropping = saved_dropping_puyos
+      endif
+
+    endif
+
   endif
 
   let s:floatting_count += 1000
@@ -408,4 +434,4 @@ function! puyo#new() " {{{
 endfunction " }}}
 
 
-"  vim: set ft=vim fdm=marker ff=unix :
+"  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :
