@@ -5,35 +5,23 @@ let s:V = vital#of('puyo.vim')
 let s:Random = s:V.import('Random.Xor128')
 call s:Random.srand()
 
-" Puyo colors
 
+" Puyo colors
 let s:R = 0
 let s:G = 1
 let s:B = 2
 let s:Y = 3
 let s:P = 4
-
 " field(not exist puyo)
 let s:F = 5
 " wall
 let s:W = 6
 
-let s:FIELD_COL = 6
-let s:FIELD_ROW = 13
 
 let s:HIDDEN_ROW = 2
 
 let s:gameover_voice = 'ばたんきゅー'
 let s:print_chain_format = '%d連鎖'
-let s:chain_voices = [
-\ 'えいっ',
-\ 'ファイヤー',
-\ 'アイスストーム',
-\ 'ダイアキュート',
-\ 'ブレインダムド',
-\ 'ジュゲム',
-\ 'ばよえ～ん',
-\ ]
 
 let s:MAX_FLOATTING_COUNT = 5000
 let s:floatting_count = 0
@@ -75,10 +63,10 @@ endfunction " }}}
 
 function! s:make_field_array(contained_dropping) " {{{
   let f = []
-  for h in range(1,s:FIELD_ROW+s:HIDDEN_ROW)
-    let f += [[s:W]+repeat([s:F],s:FIELD_COL)+[s:W]]
+  for h in range(1,g:puyo#field_height+s:HIDDEN_ROW)
+    let f += [[s:W]+repeat([s:F],g:puyo#field_width)+[s:W]]
   endfor
-  let f += [repeat([s:W],s:FIELD_COL+2)]
+  let f += [repeat([s:W],g:puyo#field_width+2)]
 
   for puyo in (a:contained_dropping ? b:session.dropping : []) + b:session.puyos
     let f[puyo.row][puyo.col] = puyo.kind
@@ -89,7 +77,7 @@ function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
 
   let is_gameover = 1
-  for n in range(s:HIDDEN_ROW,s:FIELD_ROW)
+  for n in range(s:HIDDEN_ROW,g:puyo#field_height)
     if f[n][3] == s:F
       let is_gameover = 0
     endif
@@ -99,10 +87,10 @@ function! s:movable(puyos,row,col) " {{{
   endif
 
   for puyo in a:puyos
-    if s:FIELD_ROW + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
+    if g:puyo#field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
-    if s:FIELD_COL < puyo.col + a:col || puyo.col + a:col <= 0
+    if g:puyo#field_width < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
 
@@ -118,47 +106,19 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  " s:R ~ s:P
-  let p1 = abs(s:Random.rand()) % 5
-  let p2 = abs(s:Random.rand()) % 5
+  let p1 = abs(s:Random.rand()) % g:puyo#number_of_colors
+  let p2 = abs(s:Random.rand()) % g:puyo#number_of_colors
   return [
         \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
         \   { 'row' : 1, 'col' : 3, 'kind' : p2 },
         \ ]
 endfunction " }}}
 function! s:redraw(do_init) " {{{
-  if a:do_init
-    call s:buffer_uniq_open("[puyo]",[],"w")
-    execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
-    setlocal filetype=puyo
-
-    let b:session = {
-          \   'puyos' : [],
-          \   'n_chain_text' : '',
-          \   'voice_text' : '',
-          \   'dropping' : s:next_puyo(),
-          \   'next1' : s:next_puyo(),
-          \   'next2' : s:next_puyo(),
-          \ }
-
-    nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
-    nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
-    nnoremap <silent><buffer> h :call <sid>key_left()<cr>
-    nnoremap <silent><buffer> l :call <sid>key_right()<cr>
-    nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
-    nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
-    nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
-
-    augroup Puyo
-      autocmd!
-      autocmd CursorHold,CursorHoldI * call s:auto()
-    augroup END
-  endif
 
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
-    let field[i] = repeat([s:W], s:FIELD_COL+2)
+    let field[i] = repeat([s:W], g:puyo#field_width+2)
   endfor
 
   let field[1] += [s:W,s:W                    ,s:W,s:W                    ,s:W]
@@ -189,18 +149,18 @@ endfunction " }}}
 function! s:drop() " {{{
   " initialize a field for setting puyos.
   let f = []
-  for r in range(1,s:HIDDEN_ROW+s:FIELD_ROW+1)
-    let f += [repeat([s:F],s:FIELD_COL+2)]
+  for r in range(1,s:HIDDEN_ROW+g:puyo#field_height+1)
+    let f += [repeat([s:F],g:puyo#field_width+2)]
   endfor
   for puyo in b:session.puyos
     let f[puyo.row][puyo.col] = puyo.kind
   endfor
 
   " drop
-  for c in range(s:FIELD_COL,1,-1)
+  for c in range(g:puyo#field_width,1,-1)
     while 1
       let b = 0
-      for r in range(0,s:FIELD_ROW)
+      for r in range(0,g:puyo#field_height)
         if f[r+1][c] == s:F && f[r][c] != s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
@@ -215,8 +175,8 @@ function! s:drop() " {{{
 
   " rebuild puyos
   let new_puyos = []
-  for c in range(1,s:FIELD_COL)
-    for r in range(1,s:FIELD_ROW+s:HIDDEN_ROW)
+  for c in range(1,g:puyo#field_width)
+    for r in range(1,g:puyo#field_height+s:HIDDEN_ROW)
       if f[r][c] != s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
@@ -274,7 +234,7 @@ function! s:chain() " {{{
       let b:session.puyos = curr_ps
       sleep 800m
       call s:drop()
-      let b:session.voice_text = get(s:chain_voices,chain_count,s:chain_voices[-1])
+      let b:session.voice_text = get(g:puyo#chain_voices,chain_count,g:puyo#chain_voices[-1])
       let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
       call s:redraw(0)
     else
@@ -283,6 +243,11 @@ function! s:chain() " {{{
       break
     endif
   endwhile
+
+  " consume key strokes.
+  while getchar(0)
+  endwhile
+
   return chain_count
 endfunction " }}}
 function! s:check() " {{{
@@ -331,7 +296,7 @@ function! s:key_turn(is_right) " {{{
         let b:session.dropping = saved_dropping_puyos
       endif
 
-    " right
+      " right
     elseif 1 == s:move_puyo(0,1,b:session.dropping)
       call s:turn_puyo2(a:is_right)
       if ! s:movable(b:session.dropping,0,0)
@@ -430,6 +395,55 @@ function! s:auto() " {{{
   endif
 endfunction " }}}
 function! puyo#new() " {{{
+  let g:puyo#number_of_colors = get(g:,'puyo#number_of_colors',4)
+  if g:puyo#number_of_colors < 3 || 5 < g:puyo#number_of_colors
+    let g:puyo#number_of_colors = 4
+  endif
+
+  let g:puyo#field_width = get(g:,'puyo#field_width',6)
+  if g:puyo#field_width < 0
+    let g:puyo#field_width = 6
+  endif
+
+  let g:puyo#field_height = get(g:,'puyo#field_height',13)
+  if g:puyo#field_height < 0
+    let g:puyo#field_height = 13
+  endif
+
+  let g:puyo#chain_voices = get(g:,'puyo#chain_voices',[
+        \ 'えいっ',
+        \ 'ファイヤー',
+        \ 'アイスストーム',
+        \ 'ダイアキュート',
+        \ 'ブレインダムド',
+        \ 'ジュゲム',
+        \ 'ばよえ～ん',
+        \ ])
+  call s:buffer_uniq_open("[puyo]",[],"w")
+  execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
+  setlocal filetype=puyo
+
+  let b:session = {
+        \   'puyos' : [],
+        \   'n_chain_text' : '',
+        \   'voice_text' : '',
+        \   'dropping' : s:next_puyo(),
+        \   'next1' : s:next_puyo(),
+        \   'next2' : s:next_puyo(),
+        \ }
+
+  nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
+  nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
+  nnoremap <silent><buffer> h :call <sid>key_left()<cr>
+  nnoremap <silent><buffer> l :call <sid>key_right()<cr>
+  nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
+  nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
+  nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
+
+  augroup Puyo
+    autocmd!
+    autocmd CursorHold,CursorHoldI * call s:auto()
+  augroup END
   call s:redraw(1)
 endfunction " }}}
 
