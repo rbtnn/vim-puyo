@@ -6,21 +6,25 @@ let s:Random = s:V.import('Random.Xor128')
 call s:Random.srand()
 
 " Puyo colors
+
 let s:R = 0
 let s:G = 1
 let s:B = 2
 let s:Y = 3
+let s:P = 4
 
 " field(not exist puyo)
-let s:F = 4
+let s:F = 5
 " wall
-let s:W = 5
+let s:W = 6
 
 let s:FIELD_COL = 6
 let s:FIELD_ROW = 13
 
 let s:HIDDEN_ROW = 2
 
+let s:gameover_voice = 'ばたんきゅー'
+let s:print_chain_format = '%d連鎖'
 let s:chain_voices = [
 \ 'えいっ',
 \ 'ファイヤー',
@@ -30,6 +34,9 @@ let s:chain_voices = [
 \ 'ジュゲム',
 \ 'ばよえ～ん',
 \ ]
+
+let s:MAX_FLOATTING_COUNT = 5000
+let s:floatting_count = 0
 
 function! s:buffer_nrlist() " {{{
   return  filter(range(1, bufnr("$")),"bufexists(v:val) && buflisted(v:val)")
@@ -111,9 +118,9 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  " s:R ~ s:Y
-  let p1 = abs(s:Random.rand()) % 4
-  let p2 = abs(s:Random.rand()) % 4
+  " s:R ~ s:P
+  let p1 = abs(s:Random.rand()) % 5
+  let p2 = abs(s:Random.rand()) % 5
   return [
         \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
         \   { 'row' : 1, 'col' : 3, 'kind' : p2 },
@@ -128,7 +135,8 @@ function! s:redraw(do_init) " {{{
     let b:session = {
           \   'puyos' : [
           \   ],
-          \   'text' : '',
+          \   'n_chain_text' : '',
+          \   'voice_text' : '',
           \   'dropping' : s:next_puyo(),
           \   'next1' : s:next_puyo(),
           \   'next2' : s:next_puyo(),
@@ -167,11 +175,13 @@ function! s:redraw(do_init) " {{{
     let str = substitute(str,s:G,"@G","g")
     let str = substitute(str,s:B,"@B","g")
     let str = substitute(str,s:Y,"@Y","g")
+    let str = substitute(str,s:P,"@P","g")
     let str = substitute(str,s:F,"@F","g")
     let str = substitute(str,s:W,"@W","g")
     let rtn += [str]
   endfor
-  let rtn += [b:session.text]
+  let rtn += [b:session.n_chain_text]
+  let rtn += [b:session.voice_text]
 
   call s:buffer_uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
@@ -263,9 +273,10 @@ function! s:chain() " {{{
     if is_chained
       let chain_count += 1
       let b:session.puyos = curr_ps
-      sleep 1
+      sleep 800m
       call s:drop()
-      let b:session.text = get(s:chain_voices,chain_count,s:chain_voices[-1])
+      let b:session.voice_text = get(s:chain_voices,chain_count,s:chain_voices[-1])
+      let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
       call s:redraw(0)
     else
       call s:drop()
@@ -278,6 +289,8 @@ endfunction " }}}
 function! s:check() " {{{
   let status = s:movable(b:session.dropping,1,0)
   if status == 0
+    let b:session.voice_text = ''
+    let b:session.n_chain_text = ''
     let b:session.puyos += b:session.dropping
     let b:session.dropping = b:session.next1
     let b:session.next1 = b:session.next2
@@ -310,6 +323,11 @@ function! s:key_turn(is_right) " {{{
     let b:session.dropping = saved_dropping_puyos
   endif
 
+  let s:floatting_count += 1000
+  if s:MAX_FLOATTING_COUNT < s:floatting_count
+    call s:key_down()
+    call s:check()
+  endif
   call s:redraw(0)
 endfunction " }}}
 function! s:move_puyo(row,col,puyos) " {{{
@@ -323,9 +341,16 @@ function! s:move_puyo(row,col,puyos) " {{{
   return status
 endfunction " }}}
 function! s:key_down() " {{{
-  let status = s:move_puyo(1,0,b:session.dropping)
-  if -1 == status
-    let b:session.text = 'ばたんきゅー'
+  let status = s:movable(b:session.dropping,1,0)
+  if 0 == status
+    let s:floatting_count = s:MAX_FLOATTING_COUNT
+  else
+    let status = s:move_puyo(1,0,b:session.dropping)
+    if -1 == status
+      let b:session.voice_text = s:gameover_voice
+    endif
+    " reset
+    let s:floatting_count = 0
   endif
   call s:redraw(0)
 endfunction " }}}
@@ -333,20 +358,30 @@ function! s:key_quickdrop() " {{{
   while 1
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 == status
-      let b:session.text = 'ばたんきゅー'
+      let b:session.voice_text = s:gameover_voice
       break
     elseif 0 == status
       break
     endif
   endwhile
   call s:redraw(0)
+  " reset
+  let s:floatting_count = 0
 endfunction " }}}
 function! s:key_right() " {{{
   call s:move_puyo(0,1,b:session.dropping)
+  let s:floatting_count += 1000
+  if s:MAX_FLOATTING_COUNT < s:floatting_count
+    call s:key_down()
+  endif
   call s:redraw(0)
 endfunction " }}}
 function! s:key_left() " {{{
   call s:move_puyo(0,-1,b:session.dropping)
+  let s:floatting_count += 1000
+  if s:MAX_FLOATTING_COUNT < s:floatting_count
+    call s:key_down()
+  endif
   call s:redraw(0)
 endfunction " }}}
 function! s:key_quit() " {{{
