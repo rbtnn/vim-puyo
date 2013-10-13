@@ -5,6 +5,7 @@ let s:V = vital#of('puyo.vim')
 let s:Random = s:V.import('Random.Xor128')
 call s:Random.srand()
 
+let s:dev = 1
 
 " Puyo colors
 let s:R = 0
@@ -18,9 +19,6 @@ let s:F = 5
 let s:W = 6
 " Eye
 let s:E = 7
-
-let s:dev = 1
-
 
 let s:HIDDEN_ROW = 2
 
@@ -56,18 +54,13 @@ function! s:buffer_uniq_open(bname,lines,mode) " {{{
   endif
 
   if a:mode ==# 'w'
-    if s:dev
-      let i = 1
-      for line in a:lines
-        if getline(i) !=# line
-          call setline(i,line)
-        endif
-        let i += 1
-      endfor
-    else
-      silent % delete _
-      call append(0,a:lines)
-    endif
+    let i = 1
+    for line in a:lines
+      if getline(i) !=# line
+        call setline(i,line)
+      endif
+      let i += 1
+    endfor
   elseif a:mode ==# 'a'
     call append('$',a:lines)
   endif
@@ -127,6 +120,39 @@ function! s:next_puyo() " {{{
         \   { 'row' : 1, 'col' : 3, 'kind' : p2 },
         \ ]
 endfunction " }}}
+
+function! s:test(row) " {{{
+
+  let dmy = -1
+  let dots = [
+        \ [s:F,s:F,dmy,dmy,dmy,dmy,s:F,s:F],
+        \ [s:F,dmy,s:F,dmy,dmy,s:F,dmy,s:F],
+        \ [dmy,s:F,s:E,s:F,s:F,s:E,s:F,dmy],
+        \ [dmy,dmy,s:F,dmy,dmy,s:F,dmy,dmy],
+        \ [s:F,dmy,dmy,dmy,dmy,dmy,dmy,s:F],
+        \ [s:F,s:F,dmy,dmy,dmy,dmy,s:F,s:F],
+        \ ]
+
+  let rows = []
+
+  for dot in dots
+
+    let row = []
+
+    for clr in a:row
+      if clr == s:F || clr == s:W
+        let row += repeat([clr],len(dot))
+      else
+        let row += map(deepcopy(dot),'v:val == dmy ? clr : v:val')
+      endif
+    endfor
+  "
+    let rows += [row]
+  endfor
+
+  return rows
+endfunction " }}}
+
 function! s:redraw(do_init) " {{{
 
   let field = s:make_field_array(1)
@@ -135,80 +161,16 @@ function! s:redraw(do_init) " {{{
     let field[i] = repeat([s:W], g:puyo#field_width+2)
   endfor
 
-  if s:dev
-    let field[1] += [s:W                    ,s:W,s:W                    ,s:W]
-    let field[2] += [b:session.next1[0].kind,s:W,s:W                    ,s:W]
-    let field[3] += [b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
-    let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
-    let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
-  endif
+  let field[1] += [s:W                    ,s:W,s:W                    ,s:W]
+  let field[2] += [b:session.next1[0].kind,s:W,s:W                    ,s:W]
+  let field[3] += [b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
+  let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
+  let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
 
-  if s:dev
-    let test_field = []
-    for row in field
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [s:F,s:F,clr,clr,clr,clr,s:F,s:F]
-        endif
-      endfor
-      let test_field += [test_row]
-
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [s:F,clr,s:F,clr,clr,s:F,clr,s:F]
-        endif
-      endfor
-      let test_field += [test_row]
-
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [clr,s:F,s:E,s:F,s:F,s:E,s:F,clr]
-        endif
-      endfor
-      let test_field += [test_row]
-
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [clr,clr,s:F,clr,clr,s:F,clr,clr]
-        endif
-      endfor
-      let test_field += [test_row]
-
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [s:F,clr,clr,clr,clr,clr,clr,s:F]
-        endif
-      endfor
-      let test_field += [test_row]
-
-      let test_row = []
-      for clr in row
-        if clr == s:F || clr == s:W
-          let test_row += repeat([clr],8)
-        else
-          let test_row += [s:F,s:F,clr,clr,clr,clr,s:F,s:F]
-        endif
-      endfor
-      let test_field += [test_row]
-    endfor
-  else
-    let test_field = field
-  endif
+  let test_field = []
+  for row in field
+    let test_field += s:test(row)
+  endfor
 
   let rtn = []
   for row in test_field
@@ -228,11 +190,7 @@ function! s:redraw(do_init) " {{{
 
   call s:buffer_uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
-  if s:dev
-    redraw
-  else
-    redraw!
-  endif
+  redraw
 endfunction " }}}
 function! s:drop() " {{{
   " initialize a field for setting puyos.
@@ -469,15 +427,9 @@ function! s:key_quit() " {{{
       autocmd!
     augroup END
 
-    if s:dev
-      bdelete!
-    else
-      quit
-    endif
+    bdelete!
   endif
-  if s:dev
-    set guifont=ＭＳ_ゴシック:h14:cSHIFTJIS
-  endif
+  set guifont=ＭＳ_ゴシック:h14:cSHIFTJIS
 endfunction " }}}
 
 function! s:auto() " {{{
@@ -491,20 +443,6 @@ function! s:auto() " {{{
   endif
 endfunction " }}}
 function! puyo#new() " {{{
-  let g:puyo#number_of_colors = get(g:,'puyo#number_of_colors',4)
-  if g:puyo#number_of_colors < 3 || 5 < g:puyo#number_of_colors
-    let g:puyo#number_of_colors = 4
-  endif
-
-  let g:puyo#field_width = get(g:,'puyo#field_width',6)
-  if g:puyo#field_width < 0
-    let g:puyo#field_width = 6
-  endif
-
-  let g:puyo#field_height = get(g:,'puyo#field_height',13)
-  if g:puyo#field_height < 0
-    let g:puyo#field_height = 13
-  endif
 
   let g:puyo#chain_voices = get(g:,'puyo#chain_voices',[
         \ 'えいっ',
@@ -519,6 +457,11 @@ function! puyo#new() " {{{
   execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
   setlocal filetype=puyo
 
+  let g:puyo#number_of_colors = 4
+  let g:puyo#field_width = 6
+  let g:puyo#field_height = 13
+  set guifont=ＭＳ_ゴシック:h1:cSHIFTJIS
+  only
 
   let b:session = {
         \   'puyos' : [],
@@ -541,12 +484,7 @@ function! puyo#new() " {{{
     autocmd!
     autocmd CursorHold,CursorHoldI * call s:auto()
   augroup END
-  if s:dev
-    let g:puyo#field_width = 6
-    let g:puyo#field_height = 13
-    set guifont=ＭＳ_ゴシック:h3:cSHIFTJIS
-    only
-  endif
+
   call s:redraw(1)
 endfunction " }}}
 
