@@ -3,24 +3,32 @@ scriptencoding utf-8
 
 let s:V = vital#of('puyo.vim')
 let s:Random = s:V.import('Random.Xor128')
+let s:List = s:V.import('Data.List')
 call s:Random.srand()
 
-let s:dev = 1
+let s:unix_p = has('unix')
+let s:windows_p = has('win95') || has('win16') || has('win32') || has('win64')
+let s:cygwin_p = has('win32unix')
+let s:mac_p = ! s:windows_p
+      \ && ! s:cygwin_p
+      \ && (
+      \       has('mac')
+      \    || has('macunix')
+      \    || has('gui_macvim')
+      \    || (  ! executable('xdg-open')
+      \       && system('uname') =~? '^darwin'
+      \       )
+      \    )
 
-" Puyo colors
-let s:R = 0
-let s:G = 1
-let s:B = 2
-let s:Y = 3
-let s:P = 4
-" field(not exist puyo)
-let s:F = 5
-" wall
-let s:W = 6
-" Eye
-let s:E = 7
+let s:colors = puyo#dots#colors()
+let s:W = s:colors.wall.value
+let s:F = s:colors.field.value
+
 
 let s:HIDDEN_ROW = 2
+let s:FIELD_WIDTH = 6
+let s:FIELD_HEIGHT = 13
+let s:DROPPING_POINT = 3
 
 let s:gameover_voice = 'ばたんきゅー'
 let s:print_chain_format = '%d連鎖'
@@ -28,52 +36,12 @@ let s:print_chain_format = '%d連鎖'
 let s:MAX_FLOATTING_COUNT = 5000
 let s:floatting_count = 0
 
-function! s:buffer_nrlist() " {{{
-  return  filter(range(1, bufnr("$")),"bufexists(v:val) && buflisted(v:val)")
-endfunction " }}}
-function! s:buffer_escape(bname) " {{{
-  return '^' . join(map(split(a:bname, '\zs'), '"[".v:val."]"'), '') . '$'
-endfunction " }}}
-function! s:buffer_nr(bname) " {{{
-  return bufnr(s:buffer_escape(a:bname))
-endfunction " }}}
-function! s:buffer_winnr(bname) " {{{
-  return bufwinnr(s:buffer_escape(a:bname))
-endfunction " }}}
-function! s:buffer_uniq_open(bname,lines,mode) " {{{
-  let curr_bufname = bufname('%')
-
-  if ! bufexists(a:bname)
-    execute printf('split %s',a:bname)
-    setlocal bufhidden=hide buftype=nofile noswapfile nobuflisted
-  elseif s:buffer_winnr(a:bname) != -1
-    execute s:buffer_winnr(a:bname) 'wincmd w'
-  else
-    execute 'split'
-    execute 'buffer' s:buffer_nr(a:bname)
-  endif
-
-  if a:mode ==# 'w'
-    let i = 1
-    for line in a:lines
-      if getline(i) !=# line
-        call setline(i,line)
-      endif
-      let i += 1
-    endfor
-  elseif a:mode ==# 'a'
-    call append('$',a:lines)
-  endif
-
-  execute bufwinnr(curr_bufname) 'wincmd w'
-endfunction " }}}
-
 function! s:make_field_array(contained_dropping) " {{{
   let f = []
-  for h in range(1,g:puyo#field_height+s:HIDDEN_ROW)
-    let f += [[s:W]+repeat([s:F],g:puyo#field_width)+[s:W]]
+  for h in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
+    let f += [[s:W]+repeat([s:F],s:FIELD_WIDTH)+[s:W]]
   endfor
-  let f += [repeat([s:W],g:puyo#field_width+2)]
+  let f += [repeat([s:W],s:FIELD_WIDTH+2)]
 
   for puyo in (a:contained_dropping ? b:session.dropping : []) + b:session.puyos
     let f[puyo.row][puyo.col] = puyo.kind
@@ -84,8 +52,8 @@ function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
 
   let is_gameover = 1
-  for n in range(s:HIDDEN_ROW,g:puyo#field_height)
-    if f[n][3] == s:F
+  for n in range(s:HIDDEN_ROW,s:FIELD_HEIGHT)
+    if f[n][s:DROPPING_POINT] == s:F
       let is_gameover = 0
     endif
   endfor
@@ -94,10 +62,10 @@ function! s:movable(puyos,row,col) " {{{
   endif
 
   for puyo in a:puyos
-    if g:puyo#field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
+    if s:FIELD_HEIGHT + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
-    if g:puyo#field_width < puyo.col + a:col || puyo.col + a:col <= 0
+    if s:FIELD_WIDTH < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
 
@@ -116,49 +84,17 @@ function! s:next_puyo() " {{{
   let p1 = abs(s:Random.rand()) % g:puyo#number_of_colors
   let p2 = abs(s:Random.rand()) % g:puyo#number_of_colors
   return [
-        \   { 'row' : 0, 'col' : 3, 'kind' : p1 },
-        \   { 'row' : 1, 'col' : 3, 'kind' : p2 },
+        \   { 'row' : 0, 'col' : s:DROPPING_POINT, 'kind' : p1 },
+        \   { 'row' : 1, 'col' : s:DROPPING_POINT, 'kind' : p2 },
         \ ]
-endfunction " }}}
-
-function! s:test(row) " {{{
-
-  let dmy = -1
-  let dots = [
-        \ [s:F,s:F,dmy,dmy,dmy,dmy,s:F,s:F],
-        \ [s:F,dmy,s:F,dmy,dmy,s:F,dmy,s:F],
-        \ [dmy,s:F,s:E,s:F,s:F,s:E,s:F,dmy],
-        \ [dmy,dmy,s:F,dmy,dmy,s:F,dmy,dmy],
-        \ [s:F,dmy,dmy,dmy,dmy,dmy,dmy,s:F],
-        \ [s:F,s:F,dmy,dmy,dmy,dmy,s:F,s:F],
-        \ ]
-
-  let rows = []
-
-  for dot in dots
-
-    let row = []
-
-    for clr in a:row
-      if clr == s:F || clr == s:W
-        let row += repeat([clr],len(dot))
-      else
-        let row += map(deepcopy(dot),'v:val == dmy ? clr : v:val')
-      endif
-    endfor
-  "
-    let rows += [row]
-  endfor
-
-  return rows
 endfunction " }}}
 
 function! s:redraw(do_init) " {{{
-
   let field = s:make_field_array(1)
+  call vimconsole#log(field)
 
   for i in range(0,s:HIDDEN_ROW-1)
-    let field[i] = repeat([s:W], g:puyo#field_width+2)
+    let field[i] = repeat([s:W], s:FIELD_WIDTH+2)
   endfor
 
   let field[1] += [s:W                    ,s:W,s:W                    ,s:W]
@@ -169,44 +105,37 @@ function! s:redraw(do_init) " {{{
 
   let test_field = []
   for row in field
-    let test_field += s:test(row)
+    let data = map(deepcopy(row),'puyo#dots#data(v:val)')
+    let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
   endfor
 
   let rtn = []
   for row in test_field
-    let str = join(row,"")
-    let str = substitute(str,s:R,"@R","g")
-    let str = substitute(str,s:G,"@G","g")
-    let str = substitute(str,s:B,"@B","g")
-    let str = substitute(str,s:Y,"@Y","g")
-    let str = substitute(str,s:P,"@P","g")
-    let str = substitute(str,s:F,"@F","g")
-    let str = substitute(str,s:W,"@W","g")
-    let str = substitute(str,s:E,"@E","g")
-    let rtn += [str]
+    let rtn += [puyo#dots#substitute_for_syntax(row)]
   endfor
   let rtn += [b:session.n_chain_text]
   let rtn += [b:session.voice_text]
 
-  call s:buffer_uniq_open("[puyo]",rtn,"w")
-  execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
+  call puyo#buffer#uniq_open("[puyo]",rtn,"w")
+  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   redraw
 endfunction " }}}
+" Algo {{{
 function! s:drop() " {{{
   " initialize a field for setting puyos.
   let f = []
-  for r in range(1,s:HIDDEN_ROW+g:puyo#field_height+1)
-    let f += [repeat([s:F],g:puyo#field_width+2)]
+  for r in range(1,s:HIDDEN_ROW+s:FIELD_HEIGHT+1)
+    let f += [repeat([s:F],s:FIELD_WIDTH+2)]
   endfor
   for puyo in b:session.puyos
     let f[puyo.row][puyo.col] = puyo.kind
   endfor
 
   " drop
-  for c in range(g:puyo#field_width,1,-1)
+  for c in range(s:FIELD_WIDTH,1,-1)
     while 1
       let b = 0
-      for r in range(0,g:puyo#field_height)
+      for r in range(0,s:FIELD_HEIGHT)
         if f[r+1][c] == s:F && f[r][c] != s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
@@ -221,8 +150,8 @@ function! s:drop() " {{{
 
   " rebuild puyos
   let new_puyos = []
-  for c in range(1,g:puyo#field_width)
-    for r in range(1,g:puyo#field_height+s:HIDDEN_ROW)
+  for c in range(1,s:FIELD_WIDTH)
+    for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
       if f[r][c] != s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
@@ -308,7 +237,6 @@ function! s:check() " {{{
     call s:chain()
   endif
 endfunction " }}}
-
 function! s:turn_puyo2(is_right) " {{{
   let state = [ b:session.dropping[0].row - b:session.dropping[1].row,
         \       b:session.dropping[0].col - b:session.dropping[1].col ]
@@ -391,6 +319,11 @@ function! s:key_down() " {{{
   endif
   call s:redraw(0)
 endfunction " }}}
+function! s:key_none() " {{{
+  call s:redraw(0)
+  " reset
+  let s:floatting_count = 0
+endfunction " }}}
 function! s:key_quickdrop() " {{{
   while 1
     let status = s:move_puyo(1,0,b:session.dropping)
@@ -431,7 +364,7 @@ function! s:key_quit() " {{{
   endif
   set guifont=ＭＳ_ゴシック:h14:cSHIFTJIS
 endfunction " }}}
-
+" }}}
 function! s:auto() " {{{
   if &filetype ==# "puyo"
     try
@@ -442,8 +375,9 @@ function! s:auto() " {{{
     call feedkeys(mode() ==# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
   endif
 endfunction " }}}
-function! puyo#new() " {{{
 
+function! puyo#new() " {{{
+  let g:puyo#number_of_colors = get(g:,'puyo#number_of_colors',4)
   let g:puyo#chain_voices = get(g:,'puyo#chain_voices',[
         \ 'えいっ',
         \ 'ファイヤー',
@@ -453,14 +387,16 @@ function! puyo#new() " {{{
         \ 'ジュゲム',
         \ 'ばよえ～ん',
         \ ])
-  call s:buffer_uniq_open("[puyo]",[],"w")
-  execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
+
+  call puyo#buffer#uniq_open("[puyo]",[],"w")
+  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   setlocal filetype=puyo
 
-  let g:puyo#number_of_colors = 4
-  let g:puyo#field_width = 6
-  let g:puyo#field_height = 13
-  set guifont=ＭＳ_ゴシック:h1:cSHIFTJIS
+  if s:windows_p
+    set guifont=ＭＳ_ゴシック:h3:cSHIFTJIS
+  else
+  endif
+
   only
 
   let b:session = {
@@ -474,6 +410,7 @@ function! puyo#new() " {{{
 
   nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
   nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
+  " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check()<cr>
   nnoremap <silent><buffer> h :call <sid>key_left()<cr>
   nnoremap <silent><buffer> l :call <sid>key_right()<cr>
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
