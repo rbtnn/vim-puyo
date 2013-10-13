@@ -16,6 +16,10 @@ let s:P = 4
 let s:F = 5
 " wall
 let s:W = 6
+" Eye
+let s:E = 7
+
+let s:dev = 1
 
 
 let s:HIDDEN_ROW = 2
@@ -52,8 +56,18 @@ function! s:buffer_uniq_open(bname,lines,mode) " {{{
   endif
 
   if a:mode ==# 'w'
-    silent % delete _
-    call append(0,a:lines)
+    if s:dev
+      let i = 1
+      for line in a:lines
+        if getline(i) !=# line
+          call setline(i,line)
+        endif
+        let i += 1
+      endfor
+    else
+      silent % delete _
+      call append(0,a:lines)
+    endif
   elseif a:mode ==# 'a'
     call append('$',a:lines)
   endif
@@ -121,14 +135,83 @@ function! s:redraw(do_init) " {{{
     let field[i] = repeat([s:W], g:puyo#field_width+2)
   endfor
 
-  let field[1] += [s:W,s:W                    ,s:W,s:W                    ,s:W]
-  let field[2] += [s:W,b:session.next1[0].kind,s:W,s:W                    ,s:W]
-  let field[3] += [s:W,b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
-  let field[4] += [s:W,s:W                    ,s:W,b:session.next2[1].kind,s:W]
-  let field[5] += [s:W,s:W                    ,s:W,s:W                    ,s:W]
+  if s:dev
+    let field[1] += [s:W                    ,s:W,s:W                    ,s:W]
+    let field[2] += [b:session.next1[0].kind,s:W,s:W                    ,s:W]
+    let field[3] += [b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
+    let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
+    let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
+  endif
+
+  if s:dev
+    let test_field = []
+    for row in field
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [s:F,s:F,clr,clr,clr,clr,s:F,s:F]
+        endif
+      endfor
+      let test_field += [test_row]
+
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [s:F,clr,s:F,clr,clr,s:F,clr,s:F]
+        endif
+      endfor
+      let test_field += [test_row]
+
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [clr,s:F,s:E,s:F,s:F,s:E,s:F,clr]
+        endif
+      endfor
+      let test_field += [test_row]
+
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [clr,clr,s:F,clr,clr,s:F,clr,clr]
+        endif
+      endfor
+      let test_field += [test_row]
+
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [s:F,clr,clr,clr,clr,clr,clr,s:F]
+        endif
+      endfor
+      let test_field += [test_row]
+
+      let test_row = []
+      for clr in row
+        if clr == s:F || clr == s:W
+          let test_row += repeat([clr],8)
+        else
+          let test_row += [s:F,s:F,clr,clr,clr,clr,s:F,s:F]
+        endif
+      endfor
+      let test_field += [test_row]
+    endfor
+  else
+    let test_field = field
+  endif
 
   let rtn = []
-  for row in field
+  for row in test_field
     let str = join(row,"")
     let str = substitute(str,s:R,"@R","g")
     let str = substitute(str,s:G,"@G","g")
@@ -137,6 +220,7 @@ function! s:redraw(do_init) " {{{
     let str = substitute(str,s:P,"@P","g")
     let str = substitute(str,s:F,"@F","g")
     let str = substitute(str,s:W,"@W","g")
+    let str = substitute(str,s:E,"@E","g")
     let rtn += [str]
   endfor
   let rtn += [b:session.n_chain_text]
@@ -144,7 +228,11 @@ function! s:redraw(do_init) " {{{
 
   call s:buffer_uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
-  redraw!
+  if s:dev
+    redraw
+  else
+    redraw!
+  endif
 endfunction " }}}
 function! s:drop() " {{{
   " initialize a field for setting puyos.
@@ -380,7 +468,15 @@ function! s:key_quit() " {{{
     augroup Puyo
       autocmd!
     augroup END
-    quit
+
+    if s:dev
+      bdelete!
+    else
+      quit
+    endif
+  endif
+  if s:dev
+    set guifont=ＭＳ_ゴシック:h14:cSHIFTJIS
   endif
 endfunction " }}}
 
@@ -423,6 +519,7 @@ function! puyo#new() " {{{
   execute printf("%dwincmd w",s:buffer_winnr("[puyo]"))
   setlocal filetype=puyo
 
+
   let b:session = {
         \   'puyos' : [],
         \   'n_chain_text' : '',
@@ -444,6 +541,12 @@ function! puyo#new() " {{{
     autocmd!
     autocmd CursorHold,CursorHoldI * call s:auto()
   augroup END
+  if s:dev
+    let g:puyo#field_width = 6
+    let g:puyo#field_height = 13
+    set guifont=ＭＳ_ゴシック:h3:cSHIFTJIS
+    only
+  endif
   call s:redraw(1)
 endfunction " }}}
 

@@ -11,6 +11,7 @@ syntax match   puyoPurple "@P"
 
 syntax match   puyoField  "@F"
 syntax match   puyoWall   "@W"
+syntax match   puyoEye    "@E"
 
 
 highlight puyoRedHi     guifg=#FF0000 guibg=#FF0000 ctermfg=red ctermbg=red
@@ -21,6 +22,7 @@ highlight puyoPurpleHi  guifg=#8B008B guibg=#8B008B ctermfg=DarkMagenta ctermbg=
 
 highlight puyoFieldHi   guifg=#DDDDDD guibg=#DDDDDD ctermfg=gray ctermbg=gray
 highlight puyoWallHi    guifg=#333333 guibg=#333333 ctermfg=black ctermbg=black
+highlight puyoEyeHi     guifg=#000000 guibg=#000000 ctermfg=black ctermbg=black
 
 hi def link puyoRed     puyoRedHi
 hi def link puyoGreen   puyoGreenHi
@@ -30,6 +32,7 @@ hi def link puyoPurple  puyoPurpleHi
 
 hi def link puyoField  puyoFieldHi
 hi def link puyoWall  puyoWallHi
+hi def link puyoEye  puyoEyeHi
 
 let b:current_syntax = "puyo"
 
