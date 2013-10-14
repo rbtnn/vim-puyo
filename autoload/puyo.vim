@@ -91,7 +91,6 @@ endfunction " }}}
 
 function! s:redraw(do_init) " {{{
   let field = s:make_field_array(1)
-  call vimconsole#log(field)
 
   for i in range(0,s:HIDDEN_ROW-1)
     let field[i] = repeat([s:W], s:FIELD_WIDTH+2)
@@ -107,6 +106,19 @@ function! s:redraw(do_init) " {{{
   for row in field
     let data = map(deepcopy(row),'puyo#dots#data(v:val)')
     let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
+  endfor
+
+  let wallpaper = puyo#dots#wallpaper#data()
+  let row_idx = 0
+  for _row in wallpaper
+    let col_idx = 0
+    for dot in _row
+      if test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] == s:F
+        let test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] = dot
+      endif
+      let col_idx += 1
+    endfor
+    let row_idx += 1
   endfor
 
   let rtn = []
@@ -393,7 +405,7 @@ function! puyo#new() " {{{
   setlocal filetype=puyo
 
   if s:windows_p
-    set guifont=ＭＳ_ゴシック:h3:cSHIFTJIS
+    set guifont=ＭＳ_ゴシック:h4:cSHIFTJIS
   else
   endif
 
@@ -424,6 +436,5 @@ function! puyo#new() " {{{
 
   call s:redraw(1)
 endfunction " }}}
-
 
 "  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :

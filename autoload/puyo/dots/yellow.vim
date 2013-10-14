@@ -10,15 +10,16 @@ let s:P = s:colors.purple.value
 let s:F = s:colors.field.value
 let s:W = s:colors.wall.value
 let s:E = s:colors.eye.value
+let s:H = s:colors.white.value
 
 function! puyo#dots#yellow#data()
   let me = s:Y
   return [
+        \ [s:F,s:F,s:F, me, me, me, me,s:F,s:F,s:F],
         \ [s:F,s:F, me, me, me, me, me, me,s:F,s:F],
-        \ [s:F,s:F, me, me, me, me, me, me,s:F,s:F],
-        \ [s:F, me,s:F,s:F, me, me,s:F,s:F, me,s:F],
-        \ [ me,s:F,s:E,s:E,s:F,s:F,s:E,s:E,s:F, me],
-        \ [ me, me,s:F,s:F, me, me,s:F,s:F, me, me],
+        \ [s:F, me,s:H,s:H,s:H,s:H,s:H,s:H, me,s:F],
+        \ [ me, me,s:H,s:E,s:H,s:H,s:E,s:H, me, me],
+        \ [ me, me, me,s:H, me, me,s:H, me, me, me],
         \ [s:F, me, me, me, me, me, me, me, me,s:F],
         \ [s:F,s:F, me, me, me, me, me, me,s:F,s:F],
         \ ]

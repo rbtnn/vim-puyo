@@ -9,7 +9,8 @@ let s:colors = {
       \   'purple' : { 'value' : 4, 'data' : function('puyo#dots#purple#data') },
       \   'field'  : { 'value' : 5, 'data' : function('puyo#dots#field#data') },
       \   'wall'   : { 'value' : 6, 'data' : function('puyo#dots#wall#data') },
-      \   'eye'    : { 'value' : 7, 'data' : function('puyo#dots#wall#data') },
+      \   'eye'    : { 'value' : 7 },
+      \   'white'  : { 'value' : 8 },
       \ }
 
 function! puyo#dots#width() " {{{
@@ -40,6 +41,7 @@ function! puyo#dots#substitute_for_syntax(row) " {{{
   let str = substitute(str,s:colors.field.value,"@F","g")
   let str = substitute(str,s:colors.wall.value,"@W","g")
   let str = substitute(str,s:colors.eye.value,"@E","g")
+  let str = substitute(str,s:colors.white.value,"@0","g")
   return str
 endfunction " }}}
 
