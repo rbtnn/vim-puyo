@@ -12,16 +12,16 @@ let s:W = s:colors.wall.value
 let s:E = s:colors.eye.value
 let s:H = s:colors.white.value
 
-function! puyo#dots#one#data()
+function! puyo#dots#three#data()
   let w = s:colors.white.value
   let b = s:colors.black.value
   return [
-        \ [ w, w, w, w, w, b, w, w, w, w],
-        \ [ w, w, w, w, b, b, w, w, w, w],
-        \ [ w, w, w, w, w, b, w, w, w, w],
-        \ [ w, w, w, w, w, b, w, w, w, w],
-        \ [ w, w, w, w, w, b, w, w, w, w],
-        \ [ w, w, w, w, w, b, w, w, w, w],
+        \ [ w, w, w, w, b, b, b, w, w, w],
+        \ [ w, w, w, w, w, w, b, w, w, w],
+        \ [ w, w, w, w, w, w, b, w, w, w],
+        \ [ w, w, w, w, b, b, b, w, w, w],
+        \ [ w, w, w, w, w, w, b, w, w, w],
+        \ [ w, w, w, w, w, w, b, w, w, w],
         \ [ w, w, w, w, b, b, b, w, w, w],
         \ ]
 endfunction

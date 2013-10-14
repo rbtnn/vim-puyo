@@ -10,9 +10,11 @@ syntax match   puyoGreen  "@G"
 syntax match   puyoPurple "@P"
 syntax match   puyoField  "@F"
 syntax match   puyoWall   "@W"
-syntax match   puyoEye    "@2"
-syntax match   puyoBlack  "@4"
-syntax match   puyoWhite  "@3"
+
+syntax match   puyoEye    "@e"
+syntax match   puyoWhite  "@w"
+syntax match   puyoBlack  "@b"
+
 
 
 highlight puyoRedHi     guifg=#FF0000 guibg=#FF0000 ctermfg=red ctermbg=red

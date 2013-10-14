@@ -9,10 +9,19 @@ let s:colors = {
       \   'purple' : { 'value' : '@P', 'data' : function('puyo#dots#purple#data') },
       \   'field'  : { 'value' : '@F', 'data' : function('puyo#dots#field#data') },
       \   'wall'   : { 'value' : '@W', 'data' : function('puyo#dots#wall#data') },
+      \   'zero'   : { 'value' : '@0', 'data' : function('puyo#dots#zero#data') },
       \   'one'    : { 'value' : '@1', 'data' : function('puyo#dots#one#data') },
-      \   'eye'    : { 'value' : '@2' },
-      \   'white'  : { 'value' : '@3' },
-      \   'black'  : { 'value' : '@4' },
+      \   'two'    : { 'value' : '@2', 'data' : function('puyo#dots#two#data') },
+      \   'three'  : { 'value' : '@3', 'data' : function('puyo#dots#three#data') },
+      \   'four'   : { 'value' : '@4', 'data' : function('puyo#dots#four#data') },
+      \   'five'   : { 'value' : '@5', 'data' : function('puyo#dots#five#data') },
+      \   'six'    : { 'value' : '@6', 'data' : function('puyo#dots#six#data') },
+      \   'seven'  : { 'value' : '@7', 'data' : function('puyo#dots#seven#data') },
+      \   'eight'  : { 'value' : '@8', 'data' : function('puyo#dots#eight#data') },
+      \   'nine'   : { 'value' : '@9', 'data' : function('puyo#dots#nine#data') },
+      \   'eye'    : { 'value' : '@e' },
+      \   'white'  : { 'value' : '@w' },
+      \   'black'  : { 'value' : '@b' },
       \ }
 
 function! puyo#dots#width() " {{{

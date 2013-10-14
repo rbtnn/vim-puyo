@@ -24,7 +24,17 @@ let s:colors = puyo#dots#colors()
 let s:W = s:colors.wall.value
 let s:F = s:colors.field.value
 
+let s:zero = s:colors.zero.value
 let s:one = s:colors.one.value
+let s:two = s:colors.two.value
+let s:three = s:colors.three.value
+let s:four = s:colors.four.value
+let s:five = s:colors.five.value
+let s:six = s:colors.six.value
+let s:seven = s:colors.seven.value
+let s:eight = s:colors.eight.value
+let s:nine = s:colors.nine.value
+let s:numbers = [ s:zero, s:one, s:two, s:three, s:four, s:five, s:six, s:seven, s:eight, s:nine ]
 
 
 let s:HIDDEN_ROW = 2
@@ -110,8 +120,12 @@ function! s:redraw(do_init) " {{{
   let test_field = []
 
   if has('gui')
+    let score_ary = []
+    for c in split(printf('%08d',b:session.score),'\zs')
+      let score_ary += [ s:numbers[str2nr(c)] ]
+    endfor
 
-    for row in field + [[s:one,s:one]]
+    for row in field + [score_ary]
       let data = map(deepcopy(row),'puyo#dots#data(v:val)')
       let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
     endfor
@@ -128,7 +142,6 @@ function! s:redraw(do_init) " {{{
       endfor
       let row_idx += 1
     endfor
-
   else
     let test_field = field
   endif
@@ -139,6 +152,9 @@ function! s:redraw(do_init) " {{{
   endfor
   let rtn += [b:session.n_chain_text]
   let rtn += [b:session.voice_text]
+  if !has('gui')
+    let rtn += [ 'score:' . printf('%08d',b:session.score) ]
+  endif
 
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
@@ -208,6 +224,10 @@ function! s:recur_chain(puyos,row,col,kind) " {{{
   return cnt
 endfunction " }}}
 function! s:chain() " {{{
+  let chain_bonuses = [0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 388, 416, 448, 480, 512]
+  let connect_bonuses = [0,2,3,4,5,6,7,10,10,10,10,10,10,10,10,10,10,10]
+  let color_bonuses = [0,3,6,12,24]
+
   let score = 0
   let chain_count = 0
 
@@ -216,14 +236,21 @@ function! s:chain() " {{{
     let prev_ps = deepcopy(b:session.puyos)
     let curr_ps = deepcopy(prev_ps)
     let is_chained = 0
+
+    " use score
     let total = 0
+    let connect_bonus = 0
+    let color_bonus = {}
 
     for puyo in prev_ps
       let n = s:recur_chain(curr_ps,puyo.row,puyo.col,puyo.kind)
       if 4 <= n
         let is_chained = 1
-        let total += n
         let prev_ps = curr_ps
+
+        let total += n
+        let color_bonus[puyo.kind] = 1
+        let connect_bonus += connect_bonuses[n - 4]
       endif
       let curr_ps = deepcopy(prev_ps)
     endfor
@@ -231,6 +258,11 @@ function! s:chain() " {{{
     if is_chained
       let chain_count += 1
       let b:session.puyos = curr_ps
+      let tmp = (chain_bonuses[chain_count-1] + connect_bonus + color_bonuses[len(keys(color_bonus))-1])
+      let b:session.score += total * (tmp == 0 ? 1 : tmp ) * 10
+      if 99999999 < b:session.score
+        let b:session.score = 99999999
+      endif
       sleep 800m
       call s:drop()
       let b:session.voice_text = get( b:session.chain_voices, chain_count, b:session.chain_voices[-1])
@@ -411,6 +443,7 @@ function! puyo#new() " {{{
   let b:session = {
         \   'puyos' : [],
         \   'n_chain_text' : '',
+        \   'score' : 0,
         \   'voice_text' : '',
         \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
         \   'chain_voices' : get(g:,'puyo#chain_voices',[
