@@ -2,15 +2,17 @@
 " let s:dir = expand('%:p:r')
 
 let s:colors = {
-      \   'red'    : { 'value' : 0, 'data' : function('puyo#dots#red#data') },
-      \   'blue'   : { 'value' : 1, 'data' : function('puyo#dots#blue#data') },
-      \   'yellow' : { 'value' : 2, 'data' : function('puyo#dots#yellow#data') },
-      \   'green'  : { 'value' : 3, 'data' : function('puyo#dots#green#data') },
-      \   'purple' : { 'value' : 4, 'data' : function('puyo#dots#purple#data') },
-      \   'field'  : { 'value' : 5, 'data' : function('puyo#dots#field#data') },
-      \   'wall'   : { 'value' : 6, 'data' : function('puyo#dots#wall#data') },
-      \   'eye'    : { 'value' : 7 },
-      \   'white'  : { 'value' : 8 },
+      \   'red'    : { 'value' : '@R', 'data' : function('puyo#dots#red#data') },
+      \   'blue'   : { 'value' : '@B', 'data' : function('puyo#dots#blue#data') },
+      \   'yellow' : { 'value' : '@Y', 'data' : function('puyo#dots#yellow#data') },
+      \   'green'  : { 'value' : '@G', 'data' : function('puyo#dots#green#data') },
+      \   'purple' : { 'value' : '@P', 'data' : function('puyo#dots#purple#data') },
+      \   'field'  : { 'value' : '@F', 'data' : function('puyo#dots#field#data') },
+      \   'wall'   : { 'value' : '@W', 'data' : function('puyo#dots#wall#data') },
+      \   'one'    : { 'value' : '@1', 'data' : function('puyo#dots#one#data') },
+      \   'eye'    : { 'value' : '@2' },
+      \   'white'  : { 'value' : '@3' },
+      \   'black'  : { 'value' : '@4' },
       \ }
 
 function! puyo#dots#width() " {{{
@@ -32,17 +34,7 @@ function! puyo#dots#data(value) " {{{
   return s:colors['wall'].data()
 endfunction " }}}
 function! puyo#dots#substitute_for_syntax(row) " {{{
-  let str = join(a:row,"")
-  let str = substitute(str,s:colors.red.value,"@R","g")
-  let str = substitute(str,s:colors.green.value,"@G","g")
-  let str = substitute(str,s:colors.blue.value,"@B","g")
-  let str = substitute(str,s:colors.yellow.value,"@Y","g")
-  let str = substitute(str,s:colors.purple.value,"@P","g")
-  let str = substitute(str,s:colors.field.value,"@F","g")
-  let str = substitute(str,s:colors.wall.value,"@W","g")
-  let str = substitute(str,s:colors.eye.value,"@E","g")
-  let str = substitute(str,s:colors.white.value,"@0","g")
-  return str
+  return join(a:row,"")
 endfunction " }}}
 
 "  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :

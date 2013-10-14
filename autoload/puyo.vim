@@ -24,6 +24,8 @@ let s:colors = puyo#dots#colors()
 let s:W = s:colors.wall.value
 let s:F = s:colors.field.value
 
+let s:one = s:colors.one.value
+
 
 let s:HIDDEN_ROW = 2
 let s:FIELD_WIDTH = 6
@@ -83,8 +85,9 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  let p1 = abs(s:Random.rand()) % b:session.number_of_colors
-  let p2 = abs(s:Random.rand()) % b:session.number_of_colors
+  let puyo_colors = ['@R', '@B', '@Y', '@G', '@P']
+  let p1 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
+  let p2 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
   return [
         \   { 'row' : 0, 'col' : s:DROPPING_POINT, 'kind' : p1 },
         \   { 'row' : 1, 'col' : s:DROPPING_POINT, 'kind' : p2 },
@@ -107,7 +110,8 @@ function! s:redraw(do_init) " {{{
   let test_field = []
 
   if has('gui')
-    for row in field
+
+    for row in field + [[s:one,s:one]]
       let data = map(deepcopy(row),'puyo#dots#data(v:val)')
       let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
     endfor
@@ -124,6 +128,7 @@ function! s:redraw(do_init) " {{{
       endfor
       let row_idx += 1
     endfor
+
   else
     let test_field = field
   endif
