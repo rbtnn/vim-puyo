@@ -44,7 +44,9 @@ function! s:make_field_array(contained_dropping) " {{{
   let f += [repeat([s:W],s:FIELD_WIDTH+2)]
 
   for puyo in (a:contained_dropping ? b:session.dropping : []) + b:session.puyos
-    let f[puyo.row][puyo.col] = puyo.kind
+    if 0 <= puyo.row && 0 <= puyo.col
+      let f[puyo.row][puyo.col] = puyo.kind
+    endif
   endfor
   return f
 endfunction " }}}
@@ -81,8 +83,8 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  let p1 = abs(s:Random.rand()) % g:puyo#number_of_colors
-  let p2 = abs(s:Random.rand()) % g:puyo#number_of_colors
+  let p1 = abs(s:Random.rand()) % b:session.number_of_colors
+  let p2 = abs(s:Random.rand()) % b:session.number_of_colors
   return [
         \   { 'row' : 0, 'col' : s:DROPPING_POINT, 'kind' : p1 },
         \   { 'row' : 1, 'col' : s:DROPPING_POINT, 'kind' : p2 },
@@ -221,7 +223,7 @@ function! s:chain() " {{{
       let b:session.puyos = curr_ps
       sleep 800m
       call s:drop()
-      let b:session.voice_text = get(g:puyo#chain_voices,chain_count,g:puyo#chain_voices[-1])
+      let b:session.voice_text = get( b:session.chain_voices, chain_count, b:session.chain_voices[-1])
       let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
       call s:redraw(0)
     else
@@ -366,17 +368,19 @@ function! s:key_left() " {{{
   endif
   call s:redraw(0)
 endfunction " }}}
+" }}}
 function! s:key_quit() " {{{
   if &filetype ==# "puyo"
     augroup Puyo
       autocmd!
     augroup END
 
+    let &maxfuncdepth = b:session.backup.maxfuncdepth
+    let &guifont = b:session.backup.guifont
+    let &updatetime = b:session.backup.updatetime
     bdelete!
   endif
-  set guifont=ＭＳ_ゴシック:h14:cSHIFTJIS
 endfunction " }}}
-" }}}
 function! s:auto() " {{{
   if &filetype ==# "puyo"
     try
@@ -389,36 +393,42 @@ function! s:auto() " {{{
 endfunction " }}}
 
 function! puyo#new() " {{{
-  let g:puyo#number_of_colors = get(g:,'puyo#number_of_colors',4)
-  let g:puyo#chain_voices = get(g:,'puyo#chain_voices',[
-        \ 'えいっ',
-        \ 'ファイヤー',
-        \ 'アイスストーム',
-        \ 'ダイアキュート',
-        \ 'ブレインダムド',
-        \ 'ジュゲム',
-        \ 'ばよえ～ん',
-        \ ])
-
   call puyo#buffer#uniq_open("[puyo]",[],"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   setlocal filetype=puyo
-
-  if s:windows_p
-    set guifont=ＭＳ_ゴシック:h4:cSHIFTJIS
-  else
-  endif
-
   only
 
   let b:session = {
         \   'puyos' : [],
         \   'n_chain_text' : '',
         \   'voice_text' : '',
-        \   'dropping' : s:next_puyo(),
-        \   'next1' : s:next_puyo(),
-        \   'next2' : s:next_puyo(),
+        \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
+        \   'chain_voices' : get(g:,'puyo#chain_voices',[
+        \     'えいっ',
+        \     'ファイヤー',
+        \     'アイスストーム',
+        \     'ダイアキュート',
+        \     'ブレインダムド',
+        \     'ジュゲム',
+        \     'ばよえ～ん',
+        \     ]),
+        \   'backup' : {
+        \     'guifont' : &guifont,
+        \     'updatetime' : &updatetime,
+        \     'maxfuncdepth' : &maxfuncdepth,
+        \   },
         \ }
+  let b:session['dropping'] = s:next_puyo()
+  let b:session['next1'] = s:next_puyo()
+  let b:session['next2'] = s:next_puyo()
+
+
+  let &l:updatetime = get(g:,'puyo#updatetime',500)
+  let &l:maxfuncdepth = 1000
+  if s:windows_p
+    setlocal guifont=ＭＳ_ゴシック:h4:cSHIFTJIS
+  else
+  endif
 
   nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
   nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
