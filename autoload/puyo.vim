@@ -105,23 +105,28 @@ function! s:redraw(do_init) " {{{
   let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
 
   let test_field = []
-  for row in field
-    let data = map(deepcopy(row),'puyo#dots#data(v:val)')
-    let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
-  endfor
 
-  let wallpaper = puyo#dots#wallpaper#data()
-  let row_idx = 0
-  for _row in wallpaper
-    let col_idx = 0
-    for dot in _row
-      if test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] == s:F
-        let test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] = dot
-      endif
-      let col_idx += 1
+  if has('gui')
+    for row in field
+      let data = map(deepcopy(row),'puyo#dots#data(v:val)')
+      let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
     endfor
-    let row_idx += 1
-  endfor
+
+    let wallpaper = puyo#dots#wallpaper#data()
+    let row_idx = 0
+    for _row in wallpaper
+      let col_idx = 0
+      for dot in _row
+        if test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] == s:F
+          let test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] = dot
+        endif
+        let col_idx += 1
+      endfor
+      let row_idx += 1
+    endfor
+  else
+    let test_field = field
+  endif
 
   let rtn = []
   for row in test_field
