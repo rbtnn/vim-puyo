@@ -68,7 +68,7 @@ function! s:movable(puyos,row,col) " {{{
 
   let is_gameover = 1
   for n in range(s:HIDDEN_ROW,s:FIELD_HEIGHT)
-    if f[n][s:DROPPING_POINT] == s:F
+    if f[n][s:DROPPING_POINT] ==# s:F
       let is_gameover = 0
     endif
   endfor
@@ -84,8 +84,8 @@ function! s:movable(puyos,row,col) " {{{
       return 0
     endif
 
-    if f[puyo.row + a:row][puyo.col + a:col] != s:F
-      if f[puyo.row + a:row][puyo.col + a:col] == s:W && puyo.row + a:row < s:HIDDEN_ROW
+    if f[puyo.row + a:row][puyo.col + a:col] !=# s:F
+      if f[puyo.row + a:row][puyo.col + a:col] ==# s:W && puyo.row + a:row < s:HIDDEN_ROW
         return 1
       endif
       return 0
@@ -142,7 +142,7 @@ function! s:redraw(do_init) " {{{
     for _row in wallpaper
       let col_idx = 0
       for dot in _row
-        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:F
+        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] ==# s:F
           let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
         endif
         let col_idx += 1
@@ -183,7 +183,7 @@ function! s:drop() " {{{
     while 1
       let b = 0
       for r in range(0,s:FIELD_HEIGHT)
-        if f[r+1][c] == s:F && f[r][c] != s:F
+        if f[r+1][c] ==# s:F && f[r][c] !=# s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
           let b = 1
@@ -199,7 +199,7 @@ function! s:drop() " {{{
   let new_puyos = []
   for c in range(1,s:FIELD_WIDTH)
     for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
-      if f[r][c] != s:F
+      if f[r][c] !=# s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
     endfor
@@ -208,22 +208,22 @@ function! s:drop() " {{{
 endfunction " }}}
 function! s:recur_chain(puyos,row,col,kind) " {{{
   let cnt = 0
-  if a:kind != s:F
+  if a:kind !=# s:F
     for i in range(0,len(a:puyos)-1)
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col
+      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col
         let cnt += 1
         let a:puyos[i].kind = s:F
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
+      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col-1,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
+      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col+1,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
         let cnt += s:recur_chain(a:puyos,a:row-1,a:col,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
         let cnt += s:recur_chain(a:puyos,a:row+1,a:col,a:kind)
       endif
     endfor

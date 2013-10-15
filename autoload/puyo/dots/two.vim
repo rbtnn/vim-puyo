@@ -15,7 +15,6 @@ let s:H = s:colors.white.value
 function! puyo#dots#two#data()
   let w = s:colors.white.value
   let b = s:colors.black.value
-  " 2
   return [
         \ [ w, w, w, b, b, b, b, w, w, w],
         \ [ w, w, w, w, w, w, b, w, w, w],
