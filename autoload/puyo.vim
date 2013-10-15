@@ -475,8 +475,15 @@ function! puyo#new() " {{{
 
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
-  if s:windows_p
+
+  if exists('g:puyo#guifont')
+    let &l:guifont = g:puyo#guifont
+  elseif s:windows_p
     setlocal guifont=Consolas:h4:cSHIFTJIS
+  elseif s:unix_p
+    setlocal guifont=Monospace\ 2
+  elseif s:mac_p
+    setlocal guifont=Menlo\ Regular:h5
   else
   endif
 
