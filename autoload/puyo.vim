@@ -24,17 +24,18 @@ let s:colors = puyo#dots#colors()
 let s:W = s:colors.wall.value
 let s:F = s:colors.field.value
 
-let s:zero = s:colors.zero.value
-let s:one = s:colors.one.value
-let s:two = s:colors.two.value
-let s:three = s:colors.three.value
-let s:four = s:colors.four.value
-let s:five = s:colors.five.value
-let s:six = s:colors.six.value
-let s:seven = s:colors.seven.value
-let s:eight = s:colors.eight.value
-let s:nine = s:colors.nine.value
-let s:numbers = [ s:zero, s:one, s:two, s:three, s:four, s:five, s:six, s:seven, s:eight, s:nine ]
+let s:numbers = [
+      \ s:colors.zero.value,
+      \ s:colors.one.value,
+      \ s:colors.two.value,
+      \ s:colors.three.value,
+      \ s:colors.four.value,
+      \ s:colors.five.value,
+      \ s:colors.six.value,
+      \ s:colors.seven.value,
+      \ s:colors.eight.value,
+      \ s:colors.nine.value,
+      \ ]
 
 
 let s:HIDDEN_ROW = 2
@@ -95,7 +96,13 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  let puyo_colors = ['@R', '@B', '@Y', '@G', '@P']
+  let puyo_colors = [
+        \ s:colors.red.value,
+        \ s:colors.blue.value,
+        \ s:colors.yellow.value,
+        \ s:colors.green.value,
+        \ s:colors.purple.value,
+        \ ]
   let p1 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
   let p2 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
   return [
@@ -135,8 +142,8 @@ function! s:redraw(do_init) " {{{
     for _row in wallpaper
       let col_idx = 0
       for dot in _row
-        if test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] == s:F
-          let test_field[s:HIDDEN_ROW*7+row_idx][1*10+col_idx] = dot
+        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:F
+          let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
         endif
         let col_idx += 1
       endfor
@@ -469,7 +476,7 @@ function! puyo#new() " {{{
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
   if s:windows_p
-    setlocal guifont=ＭＳ_ゴシック:h4:cSHIFTJIS
+    setlocal guifont=Consolas:h4:cSHIFTJIS
   else
   endif
 
