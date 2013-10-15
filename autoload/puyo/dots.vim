@@ -36,8 +36,8 @@ function! puyo#dots#colors() " {{{
 endfunction " }}}
 function! puyo#dots#data(value) " {{{
   for key in keys(s:colors)
-    if s:colors[key].value == a:value
-      return s:colors[key].data()
+    if s:colors[key].value ==# a:value
+        return s:colors[key].data()
     endif
   endfor
   return s:colors['wall'].data()
