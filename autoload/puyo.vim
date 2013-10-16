@@ -166,6 +166,10 @@ function! s:redraw(do_init) " {{{
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   redraw
+
+  " consume key strokes.
+  " while getchar(0)
+  " endwhile
 endfunction " }}}
 " Algo {{{
 function! s:drop() " {{{
@@ -272,7 +276,7 @@ function! s:chain() " {{{
       endif
       sleep 800m
       call s:drop()
-      let b:session.voice_text = get( b:session.chain_voices, chain_count, b:session.chain_voices[-1])
+      let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
       let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
       call s:redraw(0)
     else
@@ -301,20 +305,20 @@ function! s:check() " {{{
   endif
 endfunction " }}}
 function! s:turn_puyo2(is_right) " {{{
-  let state = [ b:session.dropping[0].row - b:session.dropping[1].row,
-        \       b:session.dropping[0].col - b:session.dropping[1].col ]
+  let state = [ b:session.dropping[1].row - b:session.dropping[0].row,
+        \       b:session.dropping[1].col - b:session.dropping[0].col ]
   if state == [0,-1]
-    let b:session.dropping[1].row = b:session.dropping[0].row + (a:is_right ? 1 : -1)
-    let b:session.dropping[1].col = b:session.dropping[0].col
+    let b:session.dropping[0].row = b:session.dropping[1].row + (a:is_right ? 1 : -1)
+    let b:session.dropping[0].col = b:session.dropping[1].col
   elseif state == [-1,0]
-    let b:session.dropping[1].row = b:session.dropping[0].row
-    let b:session.dropping[1].col = b:session.dropping[0].col + (a:is_right ? -1 : 1)
+    let b:session.dropping[0].row = b:session.dropping[1].row
+    let b:session.dropping[0].col = b:session.dropping[1].col + (a:is_right ? -1 : 1)
   elseif state == [0,1]
-    let b:session.dropping[1].row = b:session.dropping[0].row + (a:is_right ? -1 : 1)
-    let b:session.dropping[1].col = b:session.dropping[0].col
+    let b:session.dropping[0].row = b:session.dropping[1].row + (a:is_right ? -1 : 1)
+    let b:session.dropping[0].col = b:session.dropping[1].col
   elseif state == [1,0]
-    let b:session.dropping[1].row = b:session.dropping[0].row
-    let b:session.dropping[1].col = b:session.dropping[0].col + (a:is_right ? 1 : -1)
+    let b:session.dropping[0].row = b:session.dropping[1].row
+    let b:session.dropping[0].col = b:session.dropping[1].col + (a:is_right ? 1 : -1)
   endif
 endfunction " }}}
 
