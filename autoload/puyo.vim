@@ -126,7 +126,7 @@ function! s:redraw(do_init) " {{{
 
   let test_field = []
 
-  if has('gui')
+  if has('gui_running')
     let score_ary = []
     for c in split(printf('%08d',b:session.score),'\zs')
       let score_ary += [ s:numbers[str2nr(c)] ]
@@ -159,7 +159,7 @@ function! s:redraw(do_init) " {{{
   endfor
   let rtn += [b:session.n_chain_text]
   let rtn += [b:session.voice_text]
-  if !has('gui')
+  if !has('gui_running')
     let rtn += [ 'score:' . printf('%08d',b:session.score) ]
   endif
 
