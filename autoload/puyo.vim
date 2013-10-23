@@ -6,7 +6,7 @@ let s:Random = s:V.import('Random.Xor128')
 let s:List = s:V.import('Data.List')
 call s:Random.srand()
 
-let s:unix_p = has('unix')
+let s:unix_p = has('unix') && ! has('mac')
 let s:windows_p = has('win95') || has('win16') || has('win32') || has('win64')
 let s:cygwin_p = has('win32unix')
 let s:mac_p = ! s:windows_p
@@ -484,10 +484,10 @@ function! puyo#new() " {{{
     let &l:guifont = g:puyo#guifont
   elseif s:windows_p
     setlocal guifont=Consolas:h4:cSHIFTJIS
-  elseif s:unix_p
-    setlocal guifont=Monospace\ 2
   elseif s:mac_p
     setlocal guifont=Menlo\ Regular:h5
+  elseif s:unix_p
+    setlocal guifont=Monospace\ 2
   else
   endif
 
