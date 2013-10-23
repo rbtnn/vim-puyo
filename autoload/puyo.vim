@@ -163,6 +163,10 @@ function! s:redraw(do_init) " {{{
     let rtn += [ 'score:' . printf('%08d',b:session.score) ]
   endif
 
+  if has('gui_running')
+    let &titlestring = b:session.voice_text
+  endif
+
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   redraw
@@ -431,6 +435,7 @@ function! s:key_quit() " {{{
     let &maxfuncdepth = b:session.backup.maxfuncdepth
     let &guifont = b:session.backup.guifont
     let &updatetime = b:session.backup.updatetime
+    let &titlestring = b:session.backup.titlestring
     bdelete!
   endif
 endfunction " }}}
@@ -470,6 +475,7 @@ function! puyo#new() " {{{
         \     'guifont' : &guifont,
         \     'updatetime' : &updatetime,
         \     'maxfuncdepth' : &maxfuncdepth,
+        \     'titlestring' : &titlestring,
         \   },
         \ }
   let b:session['dropping'] = s:next_puyo()
