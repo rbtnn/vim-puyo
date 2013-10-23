@@ -436,6 +436,8 @@ function! s:key_quit() " {{{
     let &guifont = b:session.backup.guifont
     let &updatetime = b:session.backup.updatetime
     let &titlestring = b:session.backup.titlestring
+    let &columns = b:session.backup.columns
+    let &lines = b:session.backup.lines
     bdelete!
   endif
 endfunction " }}}
@@ -476,6 +478,8 @@ function! puyo#new() " {{{
         \     'updatetime' : &updatetime,
         \     'maxfuncdepth' : &maxfuncdepth,
         \     'titlestring' : &titlestring,
+        \     'columns' : &columns,
+        \     'lines' : &lines,
         \   },
         \ }
   let b:session['dropping'] = s:next_puyo()
@@ -485,6 +489,8 @@ function! puyo#new() " {{{
 
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
+  let &columns = 9999
+  let &lines = 999
 
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
