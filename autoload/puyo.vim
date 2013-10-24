@@ -491,10 +491,6 @@ function! puyo#new() " {{{
 
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
-  if has('gui_running')
-    let &columns = 9999
-    let &lines = 999
-  endif
 
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
@@ -522,6 +518,12 @@ function! puyo#new() " {{{
   augroup END
 
   call s:redraw(1)
+
+  if has('gui_running')
+    let &columns = 9999
+    let &lines = 999
+  endif
+
 endfunction " }}}
 
 "  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :
