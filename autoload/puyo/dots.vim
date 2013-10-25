@@ -1,36 +1,41 @@
 
 " let s:dir = expand('%:p:r')
 
-function! puyo#dots#width() " {{{
-  return 10
-endfunction " }}}
-function! puyo#dots#height() " {{{
-  return 7
-endfunction " }}}
+let s:colors = {
+      \   'red'    : { 'value' : '@R' },
+      \   'green'  : { 'value' : '@G' },
+      \   'blue'   : { 'value' : '@B' },
+      \   'yellow' : { 'value' : '@Y' },
+      \   'purple' : { 'value' : '@P' },
+      \   'field'  : { 'value' : '@F' },
+      \   'wall'   : { 'value' : '@W' },
+      \   'eye'    : { 'value' : '@e' },
+      \   'white'  : { 'value' : '@w' },
+      \   'black'  : { 'value' : '@b' },
+      \  }
 
-function! puyo#dots#images() " {{{
-  return {
+let s:images = {
       \   'puyos' : {
-      \     'red'    : function('puyo#dots#red#data'),
-      \     'blue'   : function('puyo#dots#blue#data'),
-      \     'yellow' : function('puyo#dots#yellow#data'),
-      \     'green'  : function('puyo#dots#green#data'),
-      \     'purple' : function('puyo#dots#purple#data'),
+      \     'red'    : function('puyo#dots#puyos#red#data'),
+      \     'blue'   : function('puyo#dots#puyos#blue#data'),
+      \     'yellow' : function('puyo#dots#puyos#yellow#data'),
+      \     'green'  : function('puyo#dots#puyos#green#data'),
+      \     'purple' : function('puyo#dots#puyos#purple#data'),
       \   },
       \   'numbers' : {
-      \     'zero'  : function('puyo#dots#zero#data'),
-      \     'one'   : function('puyo#dots#one#data'),
-      \     'two'   : function('puyo#dots#two#data'),
-      \     'three' : function('puyo#dots#three#data'),
-      \     'four'  : function('puyo#dots#four#data'),
-      \     'five'  : function('puyo#dots#five#data'),
-      \     'six'   : function('puyo#dots#six#data'),
-      \     'seven' : function('puyo#dots#seven#data'),
-      \     'eight' : function('puyo#dots#eight#data'),
-      \     'nine'  : function('puyo#dots#nine#data'),
+      \     'zero'  : function('puyo#dots#numbers#zero#data'),
+      \     'one'   : function('puyo#dots#numbers#one#data'),
+      \     'two'   : function('puyo#dots#numbers#two#data'),
+      \     'three' : function('puyo#dots#numbers#three#data'),
+      \     'four'  : function('puyo#dots#numbers#four#data'),
+      \     'five'  : function('puyo#dots#numbers#five#data'),
+      \     'six'   : function('puyo#dots#numbers#six#data'),
+      \     'seven' : function('puyo#dots#numbers#seven#data'),
+      \     'eight' : function('puyo#dots#numbers#eight#data'),
+      \     'nine'  : function('puyo#dots#numbers#nine#data'),
       \   },
       \   'wallpapers' : {
-      \     'defaut' : function('puyo#dots#wallpaper#data'),
+      \     'defaut' : function('puyo#dots#wallpapers#default#data'),
       \   },
       \   'hiragana' : {
       \     'ba' : function('puyo#dots#field#data'),
@@ -43,20 +48,38 @@ function! puyo#dots#images() " {{{
       \   'field' : function('puyo#dots#field#data'),
       \   'wall'  : function('puyo#dots#wall#data'),
       \ }
+
+function! puyo#dots#width() " {{{
+  return 10
+endfunction " }}}
+function! puyo#dots#height() " {{{
+  return 7
+endfunction " }}}
+function! puyo#dots#images() " {{{
+  return s:images
 endfunction " }}}
 function! puyo#dots#colors() " {{{
-  return {
-      \   'red'    : { 'value' : '@R' },
-      \   'green'  : { 'value' : '@G' },
-      \   'blue'   : { 'value' : '@B' },
-      \   'yellow' : { 'value' : '@Y' },
-      \   'purple' : { 'value' : '@P' },
-      \   'field'  : { 'value' : '@F' },
-      \   'wall'   : { 'value' : '@W' },
-      \   'eye'    : { 'value' : '@e' },
-      \   'white'  : { 'value' : '@w' },
-      \   'black'  : { 'value' : '@b' },
-      \  }
+  return s:colors
+endfunction " }}}
+
+function! puyo#dots#image2color_for_cui(img_fref) " {{{
+  if s:images.puyos.red == a:img_fref
+    return s:colors.red.value
+  elseif s:images.puyos.green == a:img_fref
+    return s:colors.green.value
+  elseif s:images.puyos.yellow == a:img_fref
+    return s:colors.yellow.value
+  elseif s:images.puyos.blue == a:img_fref
+    return s:colors.blue.value
+  elseif s:images.puyos.purple == a:img_fref
+    return s:colors.purple.value
+  elseif s:images.field == a:img_fref
+    return s:colors.field.value
+  elseif s:images.wall == a:img_fref
+    return s:colors.wall.value
+  else
+    return s:colors.wall.value
+  endif
 endfunction " }}}
 
 function! puyo#dots#substitute_for_syntax(row) " {{{

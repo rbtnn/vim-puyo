@@ -12,7 +12,7 @@ let s:W = s:colors.wall.value
 let s:E = s:colors.eye.value
 
 
-function! puyo#dots#wallpaper#data()
+function! puyo#dots#wallpapers#default#data()
   let b = s:colors.purple.value
   let w = s:colors.eye.value
   return repeat([

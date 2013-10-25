@@ -12,16 +12,17 @@ let s:W = s:colors.wall.value
 let s:E = s:colors.eye.value
 let s:H = s:colors.white.value
 
-function! puyo#dots#red#data()
-  let me = s:R
+function! puyo#dots#puyos#green#data()
+  let me = s:G
   return [
-        \ [s:F,s:F, me, me, me, me,s:F,s:F,s:F,s:F],
-        \ [s:F, me, me, me, me, me, me, me,s:F,s:F],
-        \ [s:F, me, me, me,s:H, me, me,s:H, me,s:F],
+        \ [s:F,s:F,s:F, me, me, me, me,s:F,s:F,s:F],
+        \ [s:F,s:F, me, me, me, me, me, me,s:F,s:F],
+        \ [s:F, me, me,s:H, me, me,s:H, me, me,s:F],
         \ [ me, me,s:H,s:E,s:H,s:H,s:E,s:H, me, me],
         \ [ me, me, me,s:H, me, me,s:H, me, me, me],
         \ [s:F, me, me, me, me, me, me, me, me,s:F],
         \ [s:F,s:F, me, me, me, me, me, me,s:F,s:F],
         \ ]
 endfunction
+
 

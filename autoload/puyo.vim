@@ -120,7 +120,7 @@ function! s:next_puyo() " {{{
         \ ]
 endfunction " }}}
 
-function! s:redraw(do_init) " {{{
+function! s:redraw() " {{{
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
@@ -159,7 +159,9 @@ function! s:redraw(do_init) " {{{
       let row_idx += 1
     endfor
   else
-    let test_field = field
+    for row_ in field
+      let test_field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
+    endfor
   endif
 
   let rtn = []
@@ -291,10 +293,10 @@ function! s:chain() " {{{
       call s:drop()
       let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
       let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
-      call s:redraw(0)
+      call s:redraw()
     else
       call s:drop()
-      call s:redraw(0)
+      call s:redraw()
       break
     endif
   endwhile
@@ -373,7 +375,7 @@ function! s:key_turn(is_right) " {{{
     call s:key_down()
     call s:check()
   endif
-  call s:redraw(0)
+  call s:redraw()
 endfunction " }}}
 function! s:move_puyo(row,col,puyos) " {{{
   let status = s:movable(a:puyos,a:row,a:col)
@@ -397,10 +399,10 @@ function! s:key_down() " {{{
     " reset
     let s:floatting_count = 0
   endif
-  call s:redraw(0)
+  call s:redraw()
 endfunction " }}}
 function! s:key_none() " {{{
-  call s:redraw(0)
+  call s:redraw()
   " reset
   let s:floatting_count = 0
 endfunction " }}}
@@ -414,7 +416,7 @@ function! s:key_quickdrop() " {{{
       break
     endif
   endwhile
-  call s:redraw(0)
+  call s:redraw()
   " reset
   let s:floatting_count = 0
 endfunction " }}}
@@ -424,7 +426,7 @@ function! s:key_right() " {{{
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
-  call s:redraw(0)
+  call s:redraw()
 endfunction " }}}
 function! s:key_left() " {{{
   call s:move_puyo(0,-1,b:session.dropping)
@@ -432,7 +434,7 @@ function! s:key_left() " {{{
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
-  call s:redraw(0)
+  call s:redraw()
 endfunction " }}}
 " }}}
 function! s:key_quit() " {{{
@@ -526,7 +528,7 @@ function! puyo#new() " {{{
     autocmd CursorHold,CursorHoldI * call s:auto()
   augroup END
 
-  call s:redraw(1)
+  call s:redraw()
 
   if has('gui_running')
     let &columns = 9999

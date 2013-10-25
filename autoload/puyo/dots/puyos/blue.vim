@@ -12,7 +12,7 @@ let s:R = s:colors.red.value
 let s:W = s:colors.wall.value
 let s:Y = s:colors.yellow.value
 
-function! puyo#dots#blue#data()
+function! puyo#dots#puyos#blue#data()
   let me = s:B
   return [
         \ [s:F,s:F,s:F, me, me, me, me,s:F,s:F,s:F],
