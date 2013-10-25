@@ -1,29 +1,6 @@
 
 " let s:dir = expand('%:p:r')
 
-let s:colors = {
-      \   'red'    : { 'value' : '@R', 'data' : function('puyo#dots#red#data') },
-      \   'blue'   : { 'value' : '@B', 'data' : function('puyo#dots#blue#data') },
-      \   'yellow' : { 'value' : '@Y', 'data' : function('puyo#dots#yellow#data') },
-      \   'green'  : { 'value' : '@G', 'data' : function('puyo#dots#green#data') },
-      \   'purple' : { 'value' : '@P', 'data' : function('puyo#dots#purple#data') },
-      \   'field'  : { 'value' : '@F', 'data' : function('puyo#dots#field#data') },
-      \   'wall'   : { 'value' : '@W', 'data' : function('puyo#dots#wall#data') },
-      \   'zero'   : { 'value' : '@0', 'data' : function('puyo#dots#zero#data') },
-      \   'one'    : { 'value' : '@1', 'data' : function('puyo#dots#one#data') },
-      \   'two'    : { 'value' : '@2', 'data' : function('puyo#dots#two#data') },
-      \   'three'  : { 'value' : '@3', 'data' : function('puyo#dots#three#data') },
-      \   'four'   : { 'value' : '@4', 'data' : function('puyo#dots#four#data') },
-      \   'five'   : { 'value' : '@5', 'data' : function('puyo#dots#five#data') },
-      \   'six'    : { 'value' : '@6', 'data' : function('puyo#dots#six#data') },
-      \   'seven'  : { 'value' : '@7', 'data' : function('puyo#dots#seven#data') },
-      \   'eight'  : { 'value' : '@8', 'data' : function('puyo#dots#eight#data') },
-      \   'nine'   : { 'value' : '@9', 'data' : function('puyo#dots#nine#data') },
-      \   'eye'    : { 'value' : '@e' },
-      \   'white'  : { 'value' : '@w' },
-      \   'black'  : { 'value' : '@b' },
-      \ }
-
 function! puyo#dots#width() " {{{
   return 10
 endfunction " }}}
@@ -31,17 +8,57 @@ function! puyo#dots#height() " {{{
   return 7
 endfunction " }}}
 
+function! puyo#dots#images() " {{{
+  return {
+      \   'puyos' : {
+      \     'red'    : function('puyo#dots#red#data'),
+      \     'blue'   : function('puyo#dots#blue#data'),
+      \     'yellow' : function('puyo#dots#yellow#data'),
+      \     'green'  : function('puyo#dots#green#data'),
+      \     'purple' : function('puyo#dots#purple#data'),
+      \   },
+      \   'numbers' : {
+      \     'zero'  : function('puyo#dots#zero#data'),
+      \     'one'   : function('puyo#dots#one#data'),
+      \     'two'   : function('puyo#dots#two#data'),
+      \     'three' : function('puyo#dots#three#data'),
+      \     'four'  : function('puyo#dots#four#data'),
+      \     'five'  : function('puyo#dots#five#data'),
+      \     'six'   : function('puyo#dots#six#data'),
+      \     'seven' : function('puyo#dots#seven#data'),
+      \     'eight' : function('puyo#dots#eight#data'),
+      \     'nine'  : function('puyo#dots#nine#data'),
+      \   },
+      \   'wallpapers' : {
+      \     'defaut' : function('puyo#dots#wallpaper#data'),
+      \   },
+      \   'hiragana' : {
+      \     'ba' : function('puyo#dots#field#data'),
+      \     'ta' : function('puyo#dots#field#data'),
+      \     'nn' : function('puyo#dots#field#data'),
+      \     'ki' : function('puyo#dots#field#data'),
+      \     'lyu' : function('puyo#dots#field#data'),
+      \     '__' : function('puyo#dots#field#data'),
+      \   },
+      \   'field' : function('puyo#dots#field#data'),
+      \   'wall'  : function('puyo#dots#wall#data'),
+      \ }
+endfunction " }}}
 function! puyo#dots#colors() " {{{
-  return deepcopy(s:colors)
+  return {
+      \   'red'    : { 'value' : '@R' },
+      \   'green'  : { 'value' : '@G' },
+      \   'blue'   : { 'value' : '@B' },
+      \   'yellow' : { 'value' : '@Y' },
+      \   'purple' : { 'value' : '@P' },
+      \   'field'  : { 'value' : '@F' },
+      \   'wall'   : { 'value' : '@W' },
+      \   'eye'    : { 'value' : '@e' },
+      \   'white'  : { 'value' : '@w' },
+      \   'black'  : { 'value' : '@b' },
+      \  }
 endfunction " }}}
-function! puyo#dots#data(value) " {{{
-  for key in keys(s:colors)
-    if s:colors[key].value ==# a:value
-        return s:colors[key].data()
-    endif
-  endfor
-  return s:colors['wall'].data()
-endfunction " }}}
+
 function! puyo#dots#substitute_for_syntax(row) " {{{
   return join(a:row,"")
 endfunction " }}}

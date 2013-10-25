@@ -20,23 +20,33 @@ let s:mac_p = ! s:windows_p
       \       )
       \    )
 
-let s:colors = puyo#dots#colors()
-let s:W = s:colors.wall.value
-let s:F = s:colors.field.value
 
+let s:clrs = puyo#dots#colors()
+let s:imgs = puyo#dots#images()
+" {{{
+let s:wallpaper = s:imgs.wallpapers.defaut
+let s:W = s:imgs.wall
+let s:F = s:imgs.field
 let s:numbers = [
-      \ s:colors.zero.value,
-      \ s:colors.one.value,
-      \ s:colors.two.value,
-      \ s:colors.three.value,
-      \ s:colors.four.value,
-      \ s:colors.five.value,
-      \ s:colors.six.value,
-      \ s:colors.seven.value,
-      \ s:colors.eight.value,
-      \ s:colors.nine.value,
+      \ s:imgs.numbers.zero,
+      \ s:imgs.numbers.one,
+      \ s:imgs.numbers.two,
+      \ s:imgs.numbers.three,
+      \ s:imgs.numbers.four,
+      \ s:imgs.numbers.five,
+      \ s:imgs.numbers.six,
+      \ s:imgs.numbers.seven,
+      \ s:imgs.numbers.eight,
+      \ s:imgs.numbers.nine,
       \ ]
-
+let s:puyo_colors = [
+      \ s:imgs.puyos.red,
+      \ s:imgs.puyos.blue,
+      \ s:imgs.puyos.yellow,
+      \ s:imgs.puyos.green,
+      \ s:imgs.puyos.purple,
+      \ ]
+" }}}
 
 let s:HIDDEN_ROW = 2
 let s:FIELD_WIDTH = 6
@@ -68,7 +78,7 @@ function! s:movable(puyos,row,col) " {{{
 
   let is_gameover = 1
   for n in range(s:HIDDEN_ROW,s:FIELD_HEIGHT)
-    if f[n][s:DROPPING_POINT] ==# s:F
+    if f[n][s:DROPPING_POINT] == s:F
       let is_gameover = 0
     endif
   endfor
@@ -84,8 +94,8 @@ function! s:movable(puyos,row,col) " {{{
       return 0
     endif
 
-    if f[puyo.row + a:row][puyo.col + a:col] !=# s:F
-      if f[puyo.row + a:row][puyo.col + a:col] ==# s:W && puyo.row + a:row < s:HIDDEN_ROW
+    if f[puyo.row + a:row][puyo.col + a:col] != s:F
+      if f[puyo.row + a:row][puyo.col + a:col] == s:W && puyo.row + a:row < s:HIDDEN_ROW
         return 1
       endif
       return 0
@@ -96,18 +106,17 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  let puyo_colors = [
-        \ s:colors.red.value,
-        \ s:colors.blue.value,
-        \ s:colors.yellow.value,
-        \ s:colors.green.value,
-        \ s:colors.purple.value,
-        \ ]
-  let p1 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
-  let p2 = puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ]
   return [
-        \   { 'row' : 0, 'col' : s:DROPPING_POINT, 'kind' : p1 },
-        \   { 'row' : 1, 'col' : s:DROPPING_POINT, 'kind' : p2 },
+        \   {
+        \     'row' : 0,
+        \     'col' : s:DROPPING_POINT,
+        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+        \   },
+        \   {
+        \     'row' : 1,
+        \     'col' : s:DROPPING_POINT,
+        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+        \   },
         \ ]
 endfunction " }}}
 
@@ -133,16 +142,16 @@ function! s:redraw(do_init) " {{{
     endfor
 
     for row in field + [score_ary]
-      let data = map(deepcopy(row),'puyo#dots#data(v:val)')
+      let data = map(deepcopy(row),'v:val()')
       let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
     endfor
 
-    let wallpaper = puyo#dots#wallpaper#data()
+    let wallpaper = s:wallpaper()
     let row_idx = 0
     for _row in wallpaper
       let col_idx = 0
       for dot in _row
-        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] ==# s:F
+        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:clrs.field.value
           let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
         endif
         let col_idx += 1
@@ -191,7 +200,7 @@ function! s:drop() " {{{
     while 1
       let b = 0
       for r in range(0,s:FIELD_HEIGHT)
-        if f[r+1][c] ==# s:F && f[r][c] !=# s:F
+        if f[r+1][c] == s:F && f[r][c] != s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
           let b = 1
@@ -207,7 +216,7 @@ function! s:drop() " {{{
   let new_puyos = []
   for c in range(1,s:FIELD_WIDTH)
     for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
-      if f[r][c] !=# s:F
+      if f[r][c] != s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
     endfor
@@ -216,22 +225,22 @@ function! s:drop() " {{{
 endfunction " }}}
 function! s:recur_chain(puyos,row,col,kind) " {{{
   let cnt = 0
-  if a:kind !=# s:F
+  if a:kind != s:F
     for i in range(0,len(a:puyos)-1)
-      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col
+      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col
         let cnt += 1
         let a:puyos[i].kind = s:F
       endif
-      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
+      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col-1,a:kind)
       endif
-      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
+      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col+1,a:kind)
       endif
-      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
         let cnt += s:recur_chain(a:puyos,a:row-1,a:col,a:kind)
       endif
-      if a:puyos[i].kind ==# a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
         let cnt += s:recur_chain(a:puyos,a:row+1,a:col,a:kind)
       endif
     endfor
@@ -264,7 +273,7 @@ function! s:chain() " {{{
         let prev_ps = curr_ps
 
         let total += n
-        let color_bonus[puyo.kind] = 1
+        let color_bonus[string(puyo.kind)] = 1
         let connect_bonus += connect_bonuses[n - 4]
       endif
       let curr_ps = deepcopy(prev_ps)
