@@ -231,14 +231,24 @@ function! s:redraw() " {{{
   redraw
 endfunction " }}}
 
-function! puyo#say_chain_voice(chain_count) " {{{
+function! puyo#play_chain_sound(chain_count) " {{{
   " Example: [[ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],...]
-  let g:puyo#sounds = get(g:,'puyo#sounds', [])
-  if ! empty(g:puyo#sounds)
+  let g:puyo#chain_sounds = get(g:,'puyo#chain_sounds', [])
+  if ! empty(g:puyo#chain_sounds)
     try
-      for v in get(g:puyo#sounds,a:chain_count,g:puyo#sounds[-1])
+      for v in get(g:puyo#chain_sounds,a:chain_count,g:puyo#chain_sounds[-1])
         call sound#play_wav(v)
       endfor
+    catch
+    endtry
+  endif
+endfunction " }}}
+function! puyo#play_land_sound() " {{{
+  " Example: ['C:/SEGA/PuyoF_ver2.0/SE/009PUYOCHAKUTI.WAV']
+  let g:puyo#land_sound = get(g:,'puyo#land_sound', [])
+  if ! empty(g:puyo#land_sound)
+    try
+      call sound#play_wav(g:puyo#land_sound)
     catch
     endtry
   endif
@@ -347,12 +357,12 @@ function! s:chain() " {{{
       if 99999999 < b:session.score
         let b:session.score = 99999999
       endif
-      sleep 800m
+      sleep 700m
       call s:drop()
       let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
       let b:session.n_chain_count = chain_count
 
-      call puyo#say_chain_voice(chain_count)
+      call puyo#play_chain_sound(chain_count)
 
       call s:redraw()
     else
@@ -368,11 +378,12 @@ function! s:chain() " {{{
 
   return chain_count
 endfunction " }}}
-function! s:check() " {{{
+function! s:check(is_auto_drop) " {{{
   let status = s:movable(b:session.dropping,1,0)
-  if status == 0
+  if status == 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
+    call puyo#play_land_sound()
+
     let b:session.voice_text = ''
-    " let b:session.n_chain_text = ''
     let b:session.n_chain_count = 0
     let b:session.puyos += b:session.dropping
     let b:session.dropping = b:session.next1
@@ -435,7 +446,7 @@ function! s:key_turn(is_right) " {{{
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
-    call s:check()
+    call s:check(0)
   endif
   call s:redraw()
 endfunction " }}}
@@ -460,6 +471,9 @@ function! s:key_down() " {{{
     endif
     " reset
     let s:floatting_count = 0
+    " consume key strokes.
+    while getchar(0)
+    endwhile
   endif
   call s:redraw()
 endfunction " }}}
@@ -520,7 +534,7 @@ function! s:auto() " {{{
   if &filetype ==# "puyo"
     try
       call s:key_down()
-      call s:check()
+      call s:check(1)
     catch
     endtry
     call feedkeys(mode() ==# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
@@ -533,7 +547,6 @@ function! puyo#new() " {{{
   setlocal filetype=puyo
   only
 
-  " \   'n_chain_text' : '',
   let b:session = {
         \   'puyos' : [],
         \   'n_chain_count' : 0,
@@ -578,18 +591,18 @@ function! puyo#new() " {{{
   else
   endif
 
-  nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check()<cr>
-  nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check()<cr>
-  " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check()<cr>
+  nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check(0)<cr>
+  nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
+  " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check(0)<cr>
   nnoremap <silent><buffer> h :call <sid>key_left()<cr>
   nnoremap <silent><buffer> l :call <sid>key_right()<cr>
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
 
-  " nnoremap <silent><buffer> <Down> :call <sid>key_down() \| call <sid>check()<cr>
-  " nnoremap <silent><buffer> <Up> :call <sid>key_quickdrop() \| call <sid>check()<cr>
-  " " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check()<cr>
+  " nnoremap <silent><buffer> <Down> :call <sid>key_down() \| call <sid>check(0)<cr>
+  " nnoremap <silent><buffer> <Up> :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
+  " " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check(0)<cr>
   " nnoremap <silent><buffer> <Left> :call <sid>key_left()<cr>
   " nnoremap <silent><buffer> <Right> :call <sid>key_right()<cr>
   " nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
