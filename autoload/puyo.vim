@@ -232,19 +232,11 @@ function! s:redraw() " {{{
 endfunction " }}}
 
 function! puyo#say_chain_voice(chain_count) " {{{
-  if exists('g:puyo_enable_voices')
-    let voice_filepathes = [
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/001RENSA2.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO01.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/002RENSA3.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO02.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/003RENSA4.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO03.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/004RENSA5.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO05.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/005RENSA6.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO06.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/006RENSA7.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO07.WAV' ],
-          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/006RENSA7.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO08.WAV' ],
-          \ ]
+  " Example: [[ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],...]
+  let g:puyo#sounds = get(g:,'puyo#sounds', [])
+  if ! empty(g:puyo#sounds)
     try
-      for v in get(voice_filepathes,a:chain_count,-1)
+      for v in get(g:puyo#sounds,a:chain_count,g:puyo#sounds[-1])
         call sound#play_wav(v)
       endfor
     catch
