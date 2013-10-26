@@ -46,6 +46,14 @@ let s:puyo_colors = [
       \ s:imgs.puyos.green,
       \ s:imgs.puyos.purple,
       \ ]
+let s:gameover_chars = [
+      \ s:imgs.hiragana.ba,
+      \ s:imgs.hiragana.ta,
+      \ s:imgs.hiragana.nn,
+      \ s:imgs.hiragana.ki,
+      \ s:imgs.hiragana.lyu,
+      \ s:imgs.hiragana.__,
+      \ ]
 " }}}
 
 let s:HIDDEN_ROW = 2
@@ -141,7 +149,7 @@ function! s:redraw() " {{{
       let score_ary += [ s:numbers[str2nr(c)] ]
     endfor
 
-    for row in field + [score_ary]
+    for row in field + [score_ary] + ( b:session.is_gameover ? [s:gameover_chars] : [] )
       let data = map(deepcopy(row),'v:val()')
       let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
     endfor
@@ -395,6 +403,7 @@ function! s:key_down() " {{{
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 == status
       let b:session.voice_text = s:gameover_voice
+      let b:session.is_gameover = 1
     endif
     " reset
     let s:floatting_count = 0
@@ -411,6 +420,7 @@ function! s:key_quickdrop() " {{{
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 == status
       let b:session.voice_text = s:gameover_voice
+      let b:session.is_gameover = 1
       break
     elseif 0 == status
       break
@@ -476,6 +486,7 @@ function! puyo#new() " {{{
         \   'n_chain_text' : '',
         \   'score' : 0,
         \   'voice_text' : '',
+        \   'is_gameover' : 0,
         \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
         \   'chain_voices' : get(g:,'puyo#chain_voices',[
         \     'えいっ',
@@ -506,7 +517,7 @@ function! puyo#new() " {{{
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
   elseif s:windows_p
-    setlocal guifont=Consolas:h4:cSHIFTJIS
+    setlocal guifont=Consolas:h2:cSHIFTJIS
   elseif s:mac_p
     setlocal guifont=Menlo\ Regular:h5
   elseif s:unix_p
@@ -522,6 +533,15 @@ function! puyo#new() " {{{
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
+
+  " nnoremap <silent><buffer> <Down> :call <sid>key_down() \| call <sid>check()<cr>
+  " nnoremap <silent><buffer> <Up> :call <sid>key_quickdrop() \| call <sid>check()<cr>
+  " " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check()<cr>
+  " nnoremap <silent><buffer> <Left> :call <sid>key_left()<cr>
+  " nnoremap <silent><buffer> <Right> :call <sid>key_right()<cr>
+  " nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
+  " nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
+  " nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
 
   augroup Puyo
     autocmd!
