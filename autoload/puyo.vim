@@ -20,7 +20,6 @@ let s:mac_p = ! s:windows_p
       \       )
       \    )
 
-
 let s:clrs = puyo#dots#colors()
 let s:imgs = puyo#dots#images()
 " {{{
@@ -54,15 +53,17 @@ let s:gameover_chars = [
       \ s:imgs.hiragana.lyu,
       \ s:imgs.hiragana.__,
       \ ]
+let s:chain_chars = [
+      \ s:imgs.hiragana.re,
+      \ s:imgs.hiragana.nn,
+      \ s:imgs.hiragana.sa,
+      \ ]
 " }}}
 
 let s:HIDDEN_ROW = 2
 let s:FIELD_WIDTH = 6
 let s:FIELD_HEIGHT = 13
 let s:DROPPING_POINT = 3
-
-let s:gameover_voice = 'ばたんきゅー'
-let s:print_chain_format = '%d連鎖'
 
 let s:MAX_FLOATTING_COUNT = 5000
 let s:floatting_count = 0
@@ -128,6 +129,84 @@ function! s:next_puyo() " {{{
         \ ]
 endfunction " }}}
 
+function! s:redraw_cui(field) " {{{
+  let field = []
+  for row_ in a:field
+    let field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
+  endfor
+
+  let rtn = []
+  for row in field
+    let rtn += [puyo#dots#substitute_for_syntax(row)]
+  endfor
+
+  if b:session.is_gameover
+    let rtn[9] .= 'ばたんきゅー'
+  else
+    let rtn[9] .= printf('%d連鎖',b:session.n_chain_count)
+  endif
+  let rtn[11] .= 'score:' . printf('%08d',b:session.score)
+
+  " let rtn += [b:session.voice_text]
+
+  return rtn
+endfunction " }}}
+function! s:redraw_gui(field) " {{{
+  let field = a:field
+
+  let n_chain_ary = []
+  if 0 < b:session.n_chain_count
+    for c in split(printf('%02d',b:session.n_chain_count),'\zs')
+      let n_chain_ary += [ s:numbers[str2nr(c)] ]
+    endfor
+    let n_chain_ary += s:chain_chars
+  endif
+
+  let score_ary = []
+  for c in split(printf('%08d',b:session.score),'\zs')
+    let score_ary += [ s:numbers[str2nr(c)] ]
+  endfor
+
+  let field[8] += repeat([s:W],8)
+  if b:session.is_gameover
+    let field[9] += s:gameover_chars + repeat([s:W],8-len(s:gameover_chars))
+  else
+    let field[9] += n_chain_ary + repeat([s:W],8-len(n_chain_ary))
+  endif
+  let field[10] += repeat([s:W],8)
+  let field[11] += score_ary
+  let field[12] += repeat([s:W],8)
+
+
+  let test_field = []
+  for row in field
+    let data = map(deepcopy(row),'v:val()')
+    let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
+  endfor
+
+
+  let wallpaper = s:wallpaper()
+  let row_idx = 0
+  for _row in wallpaper
+    let col_idx = 0
+    for dot in _row
+      if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:clrs.field.value
+        let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
+      endif
+      let col_idx += 1
+    endfor
+    let row_idx += 1
+  endfor
+
+  let rtn = []
+  for row in test_field
+    let rtn += [puyo#dots#substitute_for_syntax(row)]
+  endfor
+
+  let &titlestring = b:session.voice_text
+
+  return rtn
+endfunction " }}}
 function! s:redraw() " {{{
   let field = s:make_field_array(1)
 
@@ -141,59 +220,38 @@ function! s:redraw() " {{{
   let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
   let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
 
-  let test_field = []
-
   if has('gui_running')
-    let score_ary = []
-    for c in split(printf('%08d',b:session.score),'\zs')
-      let score_ary += [ s:numbers[str2nr(c)] ]
-    endfor
-
-    for row in field + [score_ary] + ( b:session.is_gameover ? [s:gameover_chars] : [] )
-      let data = map(deepcopy(row),'v:val()')
-      let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
-    endfor
-
-    let wallpaper = s:wallpaper()
-    let row_idx = 0
-    for _row in wallpaper
-      let col_idx = 0
-      for dot in _row
-        if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:clrs.field.value
-          let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
-        endif
-        let col_idx += 1
-      endfor
-      let row_idx += 1
-    endfor
+    let rtn = s:redraw_gui(field)
   else
-    for row_ in field
-      let test_field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
-    endfor
-  endif
-
-  let rtn = []
-  for row in test_field
-    let rtn += [puyo#dots#substitute_for_syntax(row)]
-  endfor
-  let rtn += [b:session.n_chain_text]
-  let rtn += [b:session.voice_text]
-  if !has('gui_running')
-    let rtn += [ 'score:' . printf('%08d',b:session.score) ]
-  endif
-
-  if has('gui_running')
-    let &titlestring = b:session.voice_text
+    let rtn = s:redraw_cui(field)
   endif
 
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   redraw
-
-  " consume key strokes.
-  " while getchar(0)
-  " endwhile
 endfunction " }}}
+
+function! puyo#say_chain_voice(chain_count) " {{{
+  if exists('g:puyo_enable_voices')
+    let voice_filepathes = [
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/001RENSA2.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO01.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/002RENSA3.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO02.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/003RENSA4.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO03.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/004RENSA5.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO05.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/005RENSA6.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO06.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/006RENSA7.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO07.WAV' ],
+          \     [ 'C:/SEGA/PuyoF_ver2.0/SE/006RENSA7.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO08.WAV' ],
+          \ ]
+    try
+      for v in get(voice_filepathes,a:chain_count,-1)
+        call sound#play_wav(v)
+      endfor
+    catch
+    endtry
+  endif
+endfunction " }}}
+
 " Algo {{{
 function! s:drop() " {{{
   " initialize a field for setting puyos.
@@ -300,7 +358,10 @@ function! s:chain() " {{{
       sleep 800m
       call s:drop()
       let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
-      let b:session.n_chain_text = printf(s:print_chain_format,chain_count)
+      let b:session.n_chain_count = chain_count
+
+      call puyo#say_chain_voice(chain_count)
+
       call s:redraw()
     else
       call s:drop()
@@ -319,7 +380,8 @@ function! s:check() " {{{
   let status = s:movable(b:session.dropping,1,0)
   if status == 0
     let b:session.voice_text = ''
-    let b:session.n_chain_text = ''
+    " let b:session.n_chain_text = ''
+    let b:session.n_chain_count = 0
     let b:session.puyos += b:session.dropping
     let b:session.dropping = b:session.next1
     let b:session.next1 = b:session.next2
@@ -402,7 +464,6 @@ function! s:key_down() " {{{
   else
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 == status
-      let b:session.voice_text = s:gameover_voice
       let b:session.is_gameover = 1
     endif
     " reset
@@ -419,7 +480,6 @@ function! s:key_quickdrop() " {{{
   while 1
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 == status
-      let b:session.voice_text = s:gameover_voice
       let b:session.is_gameover = 1
       break
     elseif 0 == status
@@ -481,9 +541,10 @@ function! puyo#new() " {{{
   setlocal filetype=puyo
   only
 
+  " \   'n_chain_text' : '',
   let b:session = {
         \   'puyos' : [],
-        \   'n_chain_text' : '',
+        \   'n_chain_count' : 0,
         \   'score' : 0,
         \   'voice_text' : '',
         \   'is_gameover' : 0,

@@ -1,9 +1,9 @@
 
 let s:colors = puyo#dots#colors()
-let s:F = s:colors.field.value
+let s:F = s:colors.wall.value
 
 function! puyo#dots#hiragana#__#data()
-  let me = s:colors.black.value
+  let me = s:colors.white.value
   return [
         \ [s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F],
         \ [s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F],
