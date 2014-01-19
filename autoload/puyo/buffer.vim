@@ -24,15 +24,15 @@ function! puyo#buffer#uniq_open(bname,lines,mode) " {{{
     execute 'buffer' puyo#buffer#nr(a:bname)
   endif
 
-  if a:mode ==# 'w'
+  if a:mode is# 'w'
     let i = 1
     for line in a:lines
-      if getline(i) !=# line
+      if getline(i) isnot# line
         call setline(i,line)
       endif
       let i += 1
     endfor
-  elseif a:mode ==# 'a'
+  elseif a:mode is# 'a'
     call append('$',a:lines)
   endif
 

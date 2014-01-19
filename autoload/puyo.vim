@@ -87,7 +87,7 @@ function! s:movable(puyos,row,col) " {{{
 
   let is_gameover = 1
   for n in range(s:HIDDEN_ROW,s:FIELD_HEIGHT)
-    if f[n][s:DROPPING_POINT] == s:F
+    if f[n][s:DROPPING_POINT] is s:F
       let is_gameover = 0
     endif
   endfor
@@ -103,8 +103,8 @@ function! s:movable(puyos,row,col) " {{{
       return 0
     endif
 
-    if f[puyo.row + a:row][puyo.col + a:col] != s:F
-      if f[puyo.row + a:row][puyo.col + a:col] == s:W && puyo.row + a:row < s:HIDDEN_ROW
+    if f[puyo.row + a:row][puyo.col + a:col] isnot s:F
+      if f[puyo.row + a:row][puyo.col + a:col] is s:W && puyo.row + a:row < s:HIDDEN_ROW
         return 1
       endif
       return 0
@@ -190,7 +190,7 @@ function! s:redraw_gui(field) " {{{
   for _row in wallpaper
     let col_idx = 0
     for dot in _row
-      if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] == s:clrs.field.value
+      if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] is s:clrs.field.value
         let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
       endif
       let col_idx += 1
@@ -270,7 +270,7 @@ function! s:drop() " {{{
     while 1
       let b = 0
       for r in range(0,s:FIELD_HEIGHT)
-        if f[r+1][c] == s:F && f[r][c] != s:F
+        if f[r+1][c] is s:F && f[r][c] isnot s:F
           let f[r+1][c] = f[r][c]
           let f[r][c] = s:F
           let b = 1
@@ -286,7 +286,7 @@ function! s:drop() " {{{
   let new_puyos = []
   for c in range(1,s:FIELD_WIDTH)
     for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
-      if f[r][c] != s:F
+      if f[r][c] isnot s:F
         let new_puyos += [ { 'row' : r, 'col' : c, 'kind' : f[r][c] } ]
       endif
     endfor
@@ -295,22 +295,22 @@ function! s:drop() " {{{
 endfunction " }}}
 function! s:recur_chain(puyos,row,col,kind) " {{{
   let cnt = 0
-  if a:kind != s:F
+  if a:kind isnot s:F
     for i in range(0,len(a:puyos)-1)
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col
+      if a:puyos[i].kind is a:kind && a:puyos[i].row is a:row && a:puyos[i].col is a:col
         let cnt += 1
         let a:puyos[i].kind = s:F
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col - 1
+      if a:puyos[i].kind is a:kind && a:puyos[i].row is a:row && a:puyos[i].col is a:col - 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col-1,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row && a:puyos[i].col == a:col + 1
+      if a:puyos[i].kind is a:kind && a:puyos[i].row is a:row && a:puyos[i].col is a:col + 1
         let cnt += s:recur_chain(a:puyos,a:row,a:col+1,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row - 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind is a:kind && a:puyos[i].row is a:row - 1 && a:puyos[i].col is a:col
         let cnt += s:recur_chain(a:puyos,a:row-1,a:col,a:kind)
       endif
-      if a:puyos[i].kind == a:kind && a:puyos[i].row == a:row + 1 && a:puyos[i].col == a:col
+      if a:puyos[i].kind is a:kind && a:puyos[i].row is a:row + 1 && a:puyos[i].col is a:col
         let cnt += s:recur_chain(a:puyos,a:row+1,a:col,a:kind)
       endif
     endfor
@@ -353,7 +353,7 @@ function! s:chain() " {{{
       let chain_count += 1
       let b:session.puyos = curr_ps
       let tmp = (chain_bonuses[chain_count-1] + connect_bonus + color_bonuses[len(keys(color_bonus))-1])
-      let b:session.score += total * (tmp == 0 ? 1 : tmp ) * 10
+      let b:session.score += total * (tmp is 0 ? 1 : tmp ) * 10
       if 99999999 < b:session.score
         let b:session.score = 99999999
       endif
@@ -380,7 +380,7 @@ function! s:chain() " {{{
 endfunction " }}}
 function! s:check(is_auto_drop) " {{{
   let status = s:movable(b:session.dropping,1,0)
-  if status == 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
+  if status is 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
     call puyo#play_land_sound()
 
     let b:session.voice_text = ''
@@ -419,14 +419,14 @@ function! s:key_turn(is_right) " {{{
     let b:session.dropping = saved_dropping_puyos
 
     " left
-    if 1 == s:move_puyo(0,-1,b:session.dropping)
+    if 1 is s:move_puyo(0,-1,b:session.dropping)
       call s:turn_puyo2(a:is_right)
       if ! s:movable(b:session.dropping,0,0)
         let b:session.dropping = saved_dropping_puyos
       endif
 
       " right
-    elseif 1 == s:move_puyo(0,1,b:session.dropping)
+    elseif 1 is s:move_puyo(0,1,b:session.dropping)
       call s:turn_puyo2(a:is_right)
       if ! s:movable(b:session.dropping,0,0)
         let b:session.dropping = saved_dropping_puyos
@@ -452,7 +452,7 @@ function! s:key_turn(is_right) " {{{
 endfunction " }}}
 function! s:move_puyo(row,col,puyos) " {{{
   let status = s:movable(a:puyos,a:row,a:col)
-  if status == 1
+  if status is 1
     for puyo in a:puyos
       let puyo.row += a:row
       let puyo.col += a:col
@@ -462,11 +462,11 @@ function! s:move_puyo(row,col,puyos) " {{{
 endfunction " }}}
 function! s:key_down() " {{{
   let status = s:movable(b:session.dropping,1,0)
-  if 0 == status
+  if 0 is status
     let s:floatting_count = s:MAX_FLOATTING_COUNT
   else
     let status = s:move_puyo(1,0,b:session.dropping)
-    if -1 == status
+    if -1 is status
       let b:session.is_gameover = 1
     endif
     " reset
@@ -485,10 +485,10 @@ endfunction " }}}
 function! s:key_quickdrop() " {{{
   while 1
     let status = s:move_puyo(1,0,b:session.dropping)
-    if -1 == status
+    if -1 is status
       let b:session.is_gameover = 1
       break
-    elseif 0 == status
+    elseif 0 is status
       break
     endif
   endwhile
@@ -514,7 +514,7 @@ function! s:key_left() " {{{
 endfunction " }}}
 " }}}
 function! s:key_quit() " {{{
-  if &filetype ==# "puyo"
+  if &filetype is# "puyo"
     augroup Puyo
       autocmd!
     augroup END
@@ -532,13 +532,13 @@ function! s:key_quit() " {{{
   endif
 endfunction " }}}
 function! s:auto() " {{{
-  if &filetype ==# "puyo"
+  if &filetype is# "puyo"
     try
       call s:key_down()
       call s:check(1)
     catch
     endtry
-    call feedkeys(mode() ==# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
+    call feedkeys(mode() is# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
   endif
 endfunction " }}}
 
@@ -596,21 +596,11 @@ function! puyo#new() " {{{
 
   nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check(0)<cr>
   nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
-  " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check(0)<cr>
   nnoremap <silent><buffer> h :call <sid>key_left()<cr>
   nnoremap <silent><buffer> l :call <sid>key_right()<cr>
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
-
-  " nnoremap <silent><buffer> <Down> :call <sid>key_down() \| call <sid>check(0)<cr>
-  " nnoremap <silent><buffer> <Up> :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
-  " " nnoremap <silent><buffer> k :call <sid>key_none() \| call <sid>check(0)<cr>
-  " nnoremap <silent><buffer> <Left> :call <sid>key_left()<cr>
-  " nnoremap <silent><buffer> <Right> :call <sid>key_right()<cr>
-  " nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
-  " nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
-  " nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
 
   augroup Puyo
     autocmd!

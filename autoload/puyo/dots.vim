@@ -65,19 +65,19 @@ function! puyo#dots#colors() " {{{
 endfunction " }}}
 
 function! puyo#dots#image2color_for_cui(img_fref) " {{{
-  if s:images.puyos.red == a:img_fref
+  if s:images.puyos.red is a:img_fref
     return s:colors.red.value
-  elseif s:images.puyos.green == a:img_fref
+  elseif s:images.puyos.green is a:img_fref
     return s:colors.green.value
-  elseif s:images.puyos.yellow == a:img_fref
+  elseif s:images.puyos.yellow is a:img_fref
     return s:colors.yellow.value
-  elseif s:images.puyos.blue == a:img_fref
+  elseif s:images.puyos.blue is a:img_fref
     return s:colors.blue.value
-  elseif s:images.puyos.purple == a:img_fref
+  elseif s:images.puyos.purple is a:img_fref
     return s:colors.purple.value
-  elseif s:images.field == a:img_fref
+  elseif s:images.field is a:img_fref
     return s:colors.field.value
-  elseif s:images.wall == a:img_fref
+  elseif s:images.wall is a:img_fref
     return s:colors.wall.value
   else
     return s:colors.wall.value
