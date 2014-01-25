@@ -75,7 +75,8 @@ function! s:make_field_array(contained_dropping) " {{{
   endfor
   let f += [repeat([s:W],s:FIELD_WIDTH+2)]
 
-  for puyo in (a:contained_dropping ? b:session.dropping : []) + b:session.puyos
+  for puyo in
+   \ (a:contained_dropping ? s:dropping2list() : []) + b:session.puyos
     if 0 <= puyo.row && 0 <= puyo.col
       let f[puyo.row][puyo.col] = puyo.kind
     endif
@@ -115,18 +116,25 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  return [
-        \   {
-        \     'row' : 0,
-        \     'col' : s:DROPPING_POINT,
-        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
-        \   },
-        \   {
-        \     'row' : 1,
-        \     'col' : s:DROPPING_POINT,
-        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
-        \   },
-        \ ]
+  if 1 " abs(s:Random.rand()) % 2
+    " puyo
+    let pivot = {
+          \   'row' : 0,
+          \   'col' : s:DROPPING_POINT,
+          \   'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+          \ }
+    let children = [{
+          \  'row' : pivot.row + 1,
+          \  'col' : pivot.col + 0,
+          \  'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+          \ }]
+  else
+    " teto
+  endif
+  return { 'pivot' : pivot, 'children' : children }
+endfunction " }}}
+function! s:dropping2list() " {{{
+  return [b:session.dropping.pivot] + b:session.dropping.children
 endfunction " }}}
 
 function! s:redraw_cui(field) " {{{
@@ -215,9 +223,9 @@ function! s:redraw() " {{{
   endfor
 
   let field[1] += [s:W                    ,s:W,s:W                    ,s:W]
-  let field[2] += [b:session.next1[0].kind,s:W,s:W                    ,s:W]
-  let field[3] += [b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
-  let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
+  " let field[2] += [b:session.next1[0].kind,s:W,s:W                    ,s:W]
+  " let field[3] += [b:session.next1[1].kind,s:W,b:session.next2[0].kind,s:W]
+  " let field[4] += [s:W                    ,s:W,b:session.next2[1].kind,s:W]
   let field[5] += [s:W                    ,s:W,s:W                    ,s:W]
 
   if has('gui_running')
@@ -379,63 +387,77 @@ function! s:chain() " {{{
   return chain_count
 endfunction " }}}
 function! s:check(is_auto_drop) " {{{
-  let status = s:movable(b:session.dropping,1,0)
+  let status = s:movable(s:dropping2list(),1,0)
   if status is 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
     call puyo#play_land_sound()
 
     let b:session.voice_text = ''
     let b:session.n_chain_count = 0
-    let b:session.puyos += b:session.dropping
+    let b:session.puyos += s:dropping2list()
     let b:session.dropping = b:session.next1
     let b:session.next1 = b:session.next2
     let b:session.next2 = s:next_puyo()
     call s:chain()
   endif
 endfunction " }}}
-function! s:turn_puyo2(is_right) " {{{
-  let state = [ b:session.dropping[1].row - b:session.dropping[0].row,
-        \       b:session.dropping[1].col - b:session.dropping[0].col ]
-  if state == [0,-1]
-    let b:session.dropping[0].row = b:session.dropping[1].row + (a:is_right ? 1 : -1)
-    let b:session.dropping[0].col = b:session.dropping[1].col
-  elseif state == [-1,0]
-    let b:session.dropping[0].row = b:session.dropping[1].row
-    let b:session.dropping[0].col = b:session.dropping[1].col + (a:is_right ? -1 : 1)
-  elseif state == [0,1]
-    let b:session.dropping[0].row = b:session.dropping[1].row + (a:is_right ? -1 : 1)
-    let b:session.dropping[0].col = b:session.dropping[1].col
-  elseif state == [1,0]
-    let b:session.dropping[0].row = b:session.dropping[1].row
-    let b:session.dropping[0].col = b:session.dropping[1].col + (a:is_right ? 1 : -1)
-  endif
+function! s:turn_dropping(is_right) " {{{
+  for child in b:session.dropping.children
+    let state = [ child.row - b:session.dropping.pivot.row,
+          \       child.col - b:session.dropping.pivot.col ]
+    if     state == [ 0,-1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:session.dropping.pivot.col
+    elseif state == [-1, 0]
+      let child.row = b:session.dropping.pivot.row
+      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+    elseif state == [ 0, 1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:session.dropping.pivot.col
+    elseif state == [ 1, 0]
+      let child.row = b:session.dropping.pivot.row
+      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+    elseif state == [ 1, 1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+    elseif state == [ 1,-1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+    elseif state == [-1,-1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+    elseif state == [-1, 1]
+      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+    endif
+  endfor
 endfunction " }}}
 
 function! s:key_turn(is_right) " {{{
   let saved_dropping_puyos = deepcopy(b:session.dropping)
 
-  call s:turn_puyo2(a:is_right)
+  call s:turn_dropping(a:is_right)
 
-  if ! s:movable(b:session.dropping,0,0)
+  if ! s:movable(s:dropping2list(),0,0)
     let b:session.dropping = saved_dropping_puyos
 
     " left
-    if 1 is s:move_puyo(0,-1,b:session.dropping)
-      call s:turn_puyo2(a:is_right)
-      if ! s:movable(b:session.dropping,0,0)
+    if 1 is s:move_puyo(0,-1,s:dropping2list())
+      call s:turn_dropping(a:is_right)
+      if ! s:movable(s:dropping2list(),0,0)
         let b:session.dropping = saved_dropping_puyos
       endif
 
       " right
-    elseif 1 is s:move_puyo(0,1,b:session.dropping)
-      call s:turn_puyo2(a:is_right)
-      if ! s:movable(b:session.dropping,0,0)
+    elseif 1 is s:move_puyo(0,1,s:dropping2list())
+      call s:turn_dropping(a:is_right)
+      if ! s:movable(s:dropping2list(),0,0)
         let b:session.dropping = saved_dropping_puyos
       endif
 
     else
-      call s:turn_puyo2(a:is_right)
-      call s:turn_puyo2(a:is_right)
-      if ! s:movable(b:session.dropping,0,0)
+      call s:turn_dropping(a:is_right)
+      call s:turn_dropping(a:is_right)
+      if ! s:movable(s:dropping2list(),0,0)
         let b:session.dropping = saved_dropping_puyos
       endif
 
@@ -461,11 +483,11 @@ function! s:move_puyo(row,col,puyos) " {{{
   return status
 endfunction " }}}
 function! s:key_down() " {{{
-  let status = s:movable(b:session.dropping,1,0)
+  let status = s:movable(s:dropping2list(),1,0)
   if 0 is status
     let s:floatting_count = s:MAX_FLOATTING_COUNT
   else
-    let status = s:move_puyo(1,0,b:session.dropping)
+    let status = s:move_puyo(1,0,s:dropping2list())
     if -1 is status
       let b:session.is_gameover = 1
     endif
@@ -484,7 +506,7 @@ function! s:key_none() " {{{
 endfunction " }}}
 function! s:key_quickdrop() " {{{
   while 1
-    let status = s:move_puyo(1,0,b:session.dropping)
+    let status = s:move_puyo(1,0,s:dropping2list())
     if -1 is status
       let b:session.is_gameover = 1
       break
@@ -497,7 +519,7 @@ function! s:key_quickdrop() " {{{
   let s:floatting_count = 0
 endfunction " }}}
 function! s:key_right() " {{{
-  call s:move_puyo(0,1,b:session.dropping)
+  call s:move_puyo(0,1,s:dropping2list())
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
@@ -505,7 +527,7 @@ function! s:key_right() " {{{
   call s:redraw()
 endfunction " }}}
 function! s:key_left() " {{{
-  call s:move_puyo(0,-1,b:session.dropping)
+  call s:move_puyo(0,-1,s:dropping2list())
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
@@ -513,6 +535,7 @@ function! s:key_left() " {{{
   call s:redraw()
 endfunction " }}}
 " }}}
+
 function! s:key_quit() " {{{
   if &filetype is# "puyo"
     augroup Puyo
