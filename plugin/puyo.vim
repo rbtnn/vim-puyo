@@ -13,6 +13,9 @@ set cpo&vim
 if !exists(":Puyo")
   command! -nargs=0 Puyo :call puyo#new()
 endif
+if !exists(":PuyoTeto")
+  command! -nargs=0 PuyoTeto :call puyo#new(1)
+endif
 
 let &cpo = s:save_cpo
 finish

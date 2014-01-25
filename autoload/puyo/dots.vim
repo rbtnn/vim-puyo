@@ -15,6 +15,10 @@ let s:colors = {
       \  }
 
 let s:images = {
+      \   'teto' : {
+      \     'block1'  : function('puyo#dots#teto#block1#data'),
+      \     'block2'  : function('puyo#dots#teto#block2#data'),
+      \   },
       \   'puyos' : {
       \     'red'    : function('puyo#dots#puyos#red#data'),
       \     'blue'   : function('puyo#dots#puyos#blue#data'),
