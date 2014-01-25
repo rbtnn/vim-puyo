@@ -136,12 +136,20 @@ function! s:next_puyo() " {{{
           \   'col' : s:DROPPING_POINT,
           \   'kind' : s:teto_colors[i],
           \ }
-    let children = [{
-          \  'id' : b:session.id,
-          \  'row' : pivot.row + 1,
-          \  'col' : pivot.col + 0,
-          \  'kind' : s:teto_colors[i],
-          \ }]
+    let patturn = [
+          \   [[1,0],[1,1],[0,-1]],
+          \   [[1,0],[0,-1],[0,1]],
+          \   [[1,0],[1,1],[0,1]],
+          \ ] 
+    let children = []
+    for p in patturn[abs(s:Random.rand()) % len(patturn)]
+      let children += [{
+            \  'id' : b:session.id,
+            \  'row' : pivot.row + p[0],
+            \  'col' : pivot.col + p[1],
+            \  'kind' : s:teto_colors[i],
+            \ }]
+    endfor
   else
     " puyo
     let pivot = {
@@ -356,11 +364,11 @@ function! s:drop() " {{{
     for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
       if (f[r][c]).kind isnot s:F
         let new_puyos += [ {
-            \   'id' : (f[r][c]).id,
-            \   'row' : r,
-            \   'col' : c,
-            \   'kind' : (f[r][c]).kind,
-            \ } ]
+              \   'id' : (f[r][c]).id,
+              \   'row' : r,
+              \   'col' : c,
+              \   'kind' : (f[r][c]).kind,
+              \ } ]
       endif
     endfor
   endfor
