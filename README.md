@@ -1,8 +1,6 @@
 
 # Vimでぷよぷよ -- puyo.vim --
 
-![](https://raw.github.com/rbtnn/puyo.vim/master/puyo.png)
-
 ## 始め方
 
         " ゲームを始める
@@ -10,6 +8,7 @@
 
         " ぷよテトミックスでゲームを始める
         :PuyoTeto
+
 
 ## 操作方法
 
@@ -20,7 +19,18 @@
 * qで終了  
 * rで再スタート
 
-※ `PuyoTeto`はまだ実装中の段階です．
-※ [http://puyo.sega.jp/puyopuyotetris/](『ぷよぷよテトリス』公式サイト)
+※ `PuyoTeto`はまだ実装中の段階です．  
+※ [http://puyo.sega.jp/puyopuyotetris/](『ぷよぷよテトリス』公式サイト)  
+※ これは[Vim Advent Calendar 2012](http://atnd.org/events/33746) : ATND 304日目になります。  
 
-※ これは[Vim Advent Calendar 2012](http://atnd.org/events/33746) : ATND 304日目になります。
+
+## イメージ
+
+__Puyo__
+
+![](https://raw.github.com/rbtnn/puyo.vim/puyoteto/puyo.png)
+
+__PuyoTeto__
+
+![](https://raw.github.com/rbtnn/puyo.vim/puyoteto/puyoteto.png)
+
