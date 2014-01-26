@@ -23,7 +23,8 @@ let s:mac_p = ! s:windows_p
 let s:clrs = puyo#dots#colors()
 let s:imgs = puyo#dots#images()
 " {{{
-let s:wallpaper = s:imgs.wallpapers.defaut
+let s:wallpaper_puyo = s:imgs.wallpapers.defaut_puyo
+let s:wallpaper_puyoteto = s:imgs.wallpapers.defaut_puyoteto
 let s:W = s:imgs.wall
 let s:F = s:imgs.field
 let s:numbers = [
@@ -65,10 +66,7 @@ let s:chain_chars = [
 " }}}
 
 let s:HIDDEN_ROW = 2
-let s:FIELD_WIDTH = 6
-let s:FIELD_HEIGHT = 13
 let s:DROPPING_POINT = 3
-
 let s:MAX_FLOATTING_COUNT = 5000
 let s:floatting_count = 0
 
@@ -81,10 +79,10 @@ endfunction " }}}
 
 function! s:make_field_array(contained_dropping) " {{{
   let f = []
-  for h in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
-    let f += [[s:W]+repeat([s:F],s:FIELD_WIDTH)+[s:W]]
+  for h in range(1,b:session.field_height+s:HIDDEN_ROW)
+    let f += [[s:W]+repeat([s:F],b:session.field_width)+[s:W]]
   endfor
-  let f += [repeat([s:W],s:FIELD_WIDTH+2)]
+  let f += [repeat([s:W],b:session.field_width+2)]
 
   for puyo in
         \ (a:contained_dropping ? s:dropping2list() : []) + b:session.puyos
@@ -98,7 +96,7 @@ function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
 
   let is_gameover = 1
-  for n in range(s:HIDDEN_ROW,s:FIELD_HEIGHT)
+  for n in range(s:HIDDEN_ROW,b:session.field_height)
     if f[n][s:DROPPING_POINT] is s:F
       let is_gameover = 0
     endif
@@ -108,10 +106,10 @@ function! s:movable(puyos,row,col) " {{{
   endif
 
   for puyo in a:puyos
-    if s:FIELD_HEIGHT + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
+    if b:session.field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
-    if s:FIELD_WIDTH < puyo.col + a:col || puyo.col + a:col <= 0
+    if b:session.field_width < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
 
@@ -230,7 +228,7 @@ function! s:redraw_gui(field) " {{{
   endfor
 
 
-  let wallpaper = s:wallpaper()
+  let wallpaper = b:session.is_puyoteto ? s:wallpaper_puyoteto() : s:wallpaper_puyo()
   let row_idx = 0
   for _row in wallpaper
     let col_idx = 0
@@ -256,7 +254,7 @@ function! s:redraw() " {{{
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
-    let field[i] = repeat([s:W], s:FIELD_WIDTH+2)
+    let field[i] = repeat([s:W], b:session.field_width+2)
   endfor
 
   let next1 = [b:session.next1.pivot] + b:session.next1.children
@@ -307,9 +305,9 @@ endfunction " }}}
 function! s:drop() " {{{
   " initialize a field for setting puyos.
   let f = []
-  for r in range(0,s:HIDDEN_ROW+s:FIELD_HEIGHT+1)
+  for r in range(0,s:HIDDEN_ROW+b:session.field_height+1)
     let f += [[]]
-    for c in range(0,1+s:FIELD_WIDTH+1)
+    for c in range(0,1+b:session.field_width+1)
       let f[r] += [ {
             \   'id' : -1,
             \   'row' : r,
@@ -323,10 +321,10 @@ function! s:drop() " {{{
   endfor
 
   " drop teto & bubbling puyo
-  for c in range(s:FIELD_WIDTH,1,-1)
+  for c in range(b:session.field_width,1,-1)
     while 1
       let b = 0
-      for r in range(0,s:FIELD_HEIGHT)
+      for r in range(0,b:session.field_height)
         if ! s:is_teto((f[r+1][c]).kind) && s:is_teto((f[r][c]).kind)
           let tmp = f[r+1][c]
           let f[r+1][c] = f[r][c]
@@ -341,10 +339,10 @@ function! s:drop() " {{{
   endfor
 
   " drop puyo
-  for c in range(s:FIELD_WIDTH,1,-1)
+  for c in range(b:session.field_width,1,-1)
     while 1
       let b = 0
-      for r in range(0,s:FIELD_HEIGHT)
+      for r in range(0,b:session.field_height)
         if (f[r+1][c]).kind is s:F && s:is_puyo((f[r][c]).kind)
           let tmp = f[r][c]
           let f[r][c] = f[r+1][c]
@@ -360,8 +358,8 @@ function! s:drop() " {{{
 
   " rebuild puyos
   let new_puyos = []
-  for c in range(1,s:FIELD_WIDTH)
-    for r in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
+  for c in range(1,b:session.field_width)
+    for r in range(1,b:session.field_height+s:HIDDEN_ROW)
       if (f[r][c]).kind isnot s:F
         let new_puyos += [ {
               \   'id' : (f[r][c]).id,
@@ -498,7 +496,7 @@ function! s:chain_teto() " {{{
 
   for puyo in prev_ps
     let n = s:recur_chain_teto(curr_ps,puyo.row,puyo.col,puyo.kind)
-    if s:FIELD_WIDTH is n
+    if b:session.field_width is n
       let is_chained = 1
       let prev_ps = curr_ps
       let total += n
@@ -688,6 +686,7 @@ function! s:key_quit() " {{{
     let &updatetime = b:session.backup.updatetime
     let &titlestring = b:session.backup.titlestring
     let &spell = b:session.backup.spell
+    let &wrap = b:session.backup.wrap
     if has('gui_running')
       let &columns = b:session.backup.columns
       let &lines = b:session.backup.lines
@@ -706,24 +705,19 @@ function! s:auto() " {{{
   endif
 endfunction " }}}
 
-function! puyo#new(...) " {{{
-  let is_puyoteto = 0 < a:0
-
-  call puyo#buffer#uniq_open("[puyo]",[],"w")
-  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
-  setlocal filetype=puyo
-  only
-
-  let b:session = {
-        \   'is_puyoteto' : is_puyoteto,
-        \   'puyos' : [],
-        \   'n_chain_count' : 0,
-        \   'score' : 0,
-        \   'id' : 0,
-        \   'voice_text' : '',
-        \   'is_gameover' : 0,
-        \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
-        \   'chain_voices' : get(g:,'puyo#chain_voices',[
+function! s:init_session(is_puyoteto, is_restart) " {{{
+  let session = {}
+  let session['puyos'] = []
+  let session['score'] = 0
+  let session['id'] = 0
+  let session['n_chain_count'] = 0
+  let session['is_gameover'] = 0
+  let session['is_puyoteto'] = a:is_puyoteto
+  let session['voice_text'] = ''
+  let session['number_of_colors'] = get(g:,'puyo#number_of_colors',4)
+  let session['field_width'] = a:is_puyoteto ? 8 : 6
+  let session['field_height'] = a:is_puyoteto ? 13 : 13
+  let session['chain_voices'] = get(g:,'puyo#chain_voices',[
         \     'えいっ',
         \     'ファイヤー',
         \     'アイスストーム',
@@ -731,25 +725,44 @@ function! puyo#new(...) " {{{
         \     'ブレインダムド',
         \     'ジュゲム',
         \     'ばよえ～ん',
-        \     ]),
-        \   'backup' : {
-        \     'guifont' : &guifont,
-        \     'spell' : &spell,
-        \     'updatetime' : &updatetime,
-        \     'maxfuncdepth' : &maxfuncdepth,
-        \     'titlestring' : &titlestring,
-        \     'columns' : &columns,
-        \     'lines' : &lines,
-        \   },
-        \ }
+        \     ])
+  if a:is_restart
+    let session['backup'] = b:session['backup']
+  else
+    let session['backup'] = {
+          \     'guifont' : &guifont,
+          \     'spell' : &spell,
+          \     'updatetime' : &updatetime,
+          \     'maxfuncdepth' : &maxfuncdepth,
+          \     'titlestring' : &titlestring,
+          \     'columns' : &columns,
+          \     'lines' : &lines,
+          \     'wrap' : &wrap,
+          \ }
+  endif
+
+  let b:session = deepcopy(session)
+
   let b:session['dropping'] = s:next_puyo()
   let b:session['next1'] = s:next_puyo()
   let b:session['next2'] = s:next_puyo()
+endfunction " }}}
 
+
+function! puyo#new(...) " {{{
+  let is_puyoteto = 0 < a:0 ? a:1 : 0
+
+  call puyo#buffer#uniq_open("[puyo]",[],"w")
+  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
+  setlocal filetype=puyo
+  only
+
+  call s:init_session(is_puyoteto,0)
 
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
   let &l:spell = 0
+  let &l:wrap = 0
 
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
@@ -769,6 +782,7 @@ function! puyo#new(...) " {{{
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
+  nnoremap <silent><buffer> r :call <sid>init_session(b:session.is_puyoteto,1)<cr>
 
   augroup Puyo
     autocmd!

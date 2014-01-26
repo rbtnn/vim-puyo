@@ -12,15 +12,15 @@ let s:W = s:colors.wall.value
 let s:E = s:colors.eye.value
 
 
-function! puyo#dots#wallpapers#default#data()
+function! puyo#dots#wallpapers#default_puyo#data()
   let b = s:colors.purple.value
   let w = s:colors.eye.value
   return repeat([
-        \ repeat([ b,w,b,w,b,w,b,w,b,w ], 8),
-        \ repeat([ w,b,w,b,w,b,w,b,w,b ], 8),
+        \ repeat([ b,w,b,w,b,w,b,w,b,w ], 6),
+        \ repeat([ w,b,w,b,w,b,w,b,w,b ], 6),
         \ ],45)
         \ + [
-        \ repeat([ b,w,b,w,b,w,b,w,b,w ], 8),
+        \ repeat([ b,w,b,w,b,w,b,w,b,w ], 6),
         \ ]
 endfunction
 

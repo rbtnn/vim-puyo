@@ -39,7 +39,8 @@ let s:images = {
       \     'nine'  : function('puyo#dots#numbers#nine#data'),
       \   },
       \   'wallpapers' : {
-      \     'defaut' : function('puyo#dots#wallpapers#default#data'),
+      \     'defaut_puyo' : function('puyo#dots#wallpapers#default_puyo#data'),
+      \     'defaut_puyoteto' : function('puyo#dots#wallpapers#default_puyoteto#data'),
       \   },
       \   'hiragana' : {
       \     '__'  : function('puyo#dots#hiragana#__#data'),
