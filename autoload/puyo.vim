@@ -92,6 +92,10 @@ function! s:make_field_array(contained_dropping) " {{{
   endfor
   return f
 endfunction " }}}
+
+" return -1 if gameover.
+" return 0 if can not move.
+" return 1 if can move.
 function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
 
@@ -105,18 +109,23 @@ function! s:movable(puyos,row,col) " {{{
     return -1
   endif
 
+  " let &titlestring = string(a:puyos)
+
   for puyo in a:puyos
-    if b:puyo_session.field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
+    if b:puyo_session.field_height + s:HIDDEN_ROW <= puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
     if b:puyo_session.field_width < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
 
-    if f[puyo.row + a:row][puyo.col + a:col] isnot s:F
-      if f[puyo.row + a:row][puyo.col + a:col] is s:W && puyo.row + a:row < s:HIDDEN_ROW
-        return 1
+    if f[puyo.row + a:row][puyo.col + a:col] is s:F
+      " continue
+    elseif f[puyo.row + a:row][puyo.col + a:col] is s:W
+      if s:HIDDEN_ROW <= puyo.row + a:row
+        return 0
       endif
+    else
       return 0
     endif
   endfor
@@ -278,26 +287,28 @@ function! s:redraw() " {{{
 endfunction " }}}
 
 function! puyo#play_chain_sound(chain_count) " {{{
+  " let rensa_text = get(b:puyo_session.chain_voices,a:chain_count,b:puyo_session.chain_voices[-1])
+  " call _#async([printf('say -v Kyoko %s',rensa_text)],'')
   " Example: [[ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],...]
-  let g:puyo#chain_sounds = get(g:,'puyo#chain_sounds', [])
-  if ! empty(g:puyo#chain_sounds)
-    try
-      for v in get(g:puyo#chain_sounds,a:chain_count,g:puyo#chain_sounds[-1])
-        call sound#play_wav(v)
-      endfor
-    catch
-    endtry
-  endif
+  " let g:puyo#chain_sounds = get(g:,'puyo#chain_sounds', [])
+  " if ! empty(g:puyo#chain_sounds)
+  "   try
+  "     for v in get(g:puyo#chain_sounds,a:chain_count,g:puyo#chain_sounds[-1])
+  "       call sound#play_wav(v)
+  "     endfor
+  "   catch
+  "   endtry
+  " endif
 endfunction " }}}
 function! puyo#play_land_sound() " {{{
   " Example: ['C:/SEGA/PuyoF_ver2.0/SE/009PUYOCHAKUTI.WAV']
-  let g:puyo#land_sound = get(g:,'puyo#land_sound', [])
-  if ! empty(g:puyo#land_sound)
-    try
-      call sound#play_wav(g:puyo#land_sound)
-    catch
-    endtry
-  endif
+  " let g:puyo#land_sound = get(g:,'puyo#land_sound', [])
+  " if ! empty(g:puyo#land_sound)
+    " try
+      " call sound#play_wav(g:puyo#land_sound)
+    " catch
+    " endtry
+  " endif
 endfunction " }}}
 
 " Algo {{{
@@ -574,36 +585,53 @@ endfunction " }}}
 function! s:key_turn(is_right) " {{{
   let saved_dropping_puyos = deepcopy(b:puyo_session.dropping)
 
-  call s:turn_dropping(a:is_right)
+  try
 
-  if ! s:movable(s:dropping2list(),0,0)
-    let b:puyo_session.dropping = saved_dropping_puyos
-
-    " left
-    if 1 is s:move_puyo(0,-1,s:dropping2list())
-      call s:turn_dropping(a:is_right)
-      if ! s:movable(s:dropping2list(),0,0)
-        let b:puyo_session.dropping = saved_dropping_puyos
-      endif
-
-      " right
-    elseif 1 is s:move_puyo(0,1,s:dropping2list())
-      call s:turn_dropping(a:is_right)
-      if ! s:movable(s:dropping2list(),0,0)
-        let b:puyo_session.dropping = saved_dropping_puyos
-      endif
-
+    " turn
+    call s:turn_dropping(a:is_right)
+    if s:movable(s:dropping2list(),0,0)
+      throw 1
     else
-      call s:turn_dropping(a:is_right)
-      call s:turn_dropping(a:is_right)
-      if ! s:movable(s:dropping2list(),0,0)
-        let b:puyo_session.dropping = saved_dropping_puyos
-      endif
-
+      let b:puyo_session.dropping = saved_dropping_puyos
     endif
 
-  endif
+    " move left and turn if right-side.
+    call s:move_puyo(0,-1,s:dropping2list())
+    call s:turn_dropping(a:is_right)
+    if s:movable(s:dropping2list(),0,0)
+      throw 1
+    else
+      let b:puyo_session.dropping = saved_dropping_puyos
+    endif
 
+    " move right and turn if left-side.
+    call s:move_puyo(0,1,s:dropping2list())
+    call s:turn_dropping(a:is_right)
+    if s:movable(s:dropping2list(),0,0)
+      throw 1
+    else
+      let b:puyo_session.dropping = saved_dropping_puyos
+    endif
+
+    " quick-turn
+    call s:turn_dropping(a:is_right)
+    call s:turn_dropping(a:is_right)
+    if s:movable(s:dropping2list(),0,0)
+      throw 1
+    else
+      let b:puyo_session.dropping = saved_dropping_puyos
+    endif
+
+  catch
+    " do nothing
+  finally
+    let s:floatting_count += 1000
+    if s:MAX_FLOATTING_COUNT < s:floatting_count
+      call s:key_down()
+      call s:check(0)
+    endif
+    call s:redraw()
+  endtry
   " for child in b:puyo_session.dropping.children
   "   let saved_row = child.row
   "   let saved_col = child.col
@@ -617,13 +645,6 @@ function! s:key_turn(is_right) " {{{
   "     endif
   "   endfor
   " endfor
-
-  let s:floatting_count += 1000
-  if s:MAX_FLOATTING_COUNT < s:floatting_count
-    call s:key_down()
-    call s:check(0)
-  endif
-  call s:redraw()
 endfunction " }}}
 function! s:move_puyo(row,col,puyos) " {{{
   let status = s:movable(a:puyos,a:row,a:col)
@@ -766,7 +787,6 @@ function! s:init_session(is_puyoteto, is_restart) " {{{
   let b:puyo_session['next2'] = s:next_puyo()
 endfunction " }}}
 
-
 function! puyo#new(...) " {{{
   let is_puyoteto = 0 < a:0 ? a:1 : 0
 
@@ -821,5 +841,38 @@ function! puyo#new(...) " {{{
   endif
 
 endfunction " }}}
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"         =============
+"          Puyo Layout
+"         =============
+"
+" b:puyo_session.field_width(6)--------------------+
+"                                                  |
+"                                            +--+--+--+--+--+
+"                                            |  |  |  |  |  |
+"                                            v  v  v  v  v  v
+"                                         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+" s:HIDDEN_ROW(2)-+------------------> 0 [W][H][H][H][H][H][H][W]
+"                 +------------------> 1 [W][H][H][H][H][H][H][W][W][W][W][W][W]
+"                                +---> 2 [W][F][F][F][F][F][F][W][W][.][W][W][W]
+"                                +---> 3 [W][F][F][F][F][F][F][W][W][.][W][.][W]
+"                                +---> 4 [W][F][F][F][F][F][F][W][W][W][W][.][W]
+"                                +---> 5 [W][F][F][F][F][F][F][W][W][W][W][W][W]
+"                                +---> 6 [W][F][F][F][F][F][F][W]
+"                                +---> 7 [W][F][F][F][F][F][F][W]
+" b:puyo_session.field_width(13)-+---> 8 [W][F][F][F][F][F][F][W][W][W][W][W][W][W][W][W]
+"                                +---> 9 [W][F][F][F][F][F][F][W][W][W][W][W][W][W][W][W]
+"                                +--->10 [W][F][F][F][F][F][F][W][W][W][W][W][W][W][W][W]
+"                                +--->11 [W][F][F][F][F][F][F][W][0][0][0][0][0][0][0][0]
+"                                +--->12 [W][F][F][F][F][F][F][W][W][W][W][W][W][W][W][W]
+"                                +--->13 [W][F][F][F][F][F][F][W]
+"                                +--->14 [W][F][F][F][F][F][F][W]
+"                                     15 [W][W][W][W][W][W][W][W]
+"                                                  ^
+"                                                  |
+" s:DROPPING_POINT(3)------------------------------+
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 "  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :
