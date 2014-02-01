@@ -79,13 +79,13 @@ endfunction " }}}
 
 function! s:make_field_array(contained_dropping) " {{{
   let f = []
-  for h in range(1,b:session.field_height+s:HIDDEN_ROW)
-    let f += [[s:W]+repeat([s:F],b:session.field_width)+[s:W]]
+  for h in range(1,b:puyo_session.field_height+s:HIDDEN_ROW)
+    let f += [[s:W]+repeat([s:F],b:puyo_session.field_width)+[s:W]]
   endfor
-  let f += [repeat([s:W],b:session.field_width+2)]
+  let f += [repeat([s:W],b:puyo_session.field_width+2)]
 
   for puyo in
-        \ (a:contained_dropping ? s:dropping2list() : []) + b:session.puyos
+        \ (a:contained_dropping ? s:dropping2list() : []) + b:puyo_session.puyos
     if 0 <= puyo.row && 0 <= puyo.col
       let f[puyo.row][puyo.col] = puyo.kind
     endif
@@ -96,7 +96,7 @@ function! s:movable(puyos,row,col) " {{{
   let f = s:make_field_array(0)
 
   let is_gameover = 1
-  for n in range(s:HIDDEN_ROW,b:session.field_height)
+  for n in range(s:HIDDEN_ROW,b:puyo_session.field_height)
     if f[n][s:DROPPING_POINT] is s:F
       let is_gameover = 0
     endif
@@ -106,10 +106,10 @@ function! s:movable(puyos,row,col) " {{{
   endif
 
   for puyo in a:puyos
-    if b:session.field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
+    if b:puyo_session.field_height + s:HIDDEN_ROW < puyo.row + a:row || puyo.row + a:row < 0
       return 0
     endif
-    if b:session.field_width < puyo.col + a:col || puyo.col + a:col <= 0
+    if b:puyo_session.field_width < puyo.col + a:col || puyo.col + a:col <= 0
       return 0
     endif
 
@@ -125,11 +125,11 @@ function! s:movable(puyos,row,col) " {{{
 endfunction " }}}
 
 function! s:next_puyo() " {{{
-  if b:session.is_puyoteto && (abs(s:Random.rand()) % 2)
+  if b:puyo_session.is_puyoteto && (abs(s:Random.rand()) % 2)
     " teto
     let i = abs(s:Random.rand()) % len(s:teto_colors)
     let pivot = {
-          \   'id' : b:session.id,
+          \   'id' : b:puyo_session.id,
           \   'row' : 0,
           \   'col' : s:DROPPING_POINT,
           \   'kind' : s:teto_colors[i],
@@ -142,7 +142,7 @@ function! s:next_puyo() " {{{
     let children = []
     for p in patturn[abs(s:Random.rand()) % len(patturn)]
       let children += [{
-            \  'id' : b:session.id,
+            \  'id' : b:puyo_session.id,
             \  'row' : pivot.row + p[0],
             \  'col' : pivot.col + p[1],
             \  'kind' : s:teto_colors[i],
@@ -151,25 +151,25 @@ function! s:next_puyo() " {{{
   else
     " puyo
     let pivot = {
-          \   'id' : b:session.id,
+          \   'id' : b:puyo_session.id,
           \   'row' : 0,
           \   'col' : s:DROPPING_POINT,
-          \   'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+          \   'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:puyo_session.number_of_colors ],
           \ }
     let children = [{
-          \  'id' : b:session.id,
+          \  'id' : b:puyo_session.id,
           \  'row' : pivot.row + 1,
           \  'col' : pivot.col + 0,
-          \  'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+          \  'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:puyo_session.number_of_colors ],
           \ }]
   endif
 
-  let b:session.id += 1
+  let b:puyo_session.id += 1
 
   return { 'pivot' : pivot, 'children' : children }
 endfunction " }}}
 function! s:dropping2list() " {{{
-  return [b:session.dropping.pivot] + b:session.dropping.children
+  return [b:puyo_session.dropping.pivot] + b:puyo_session.dropping.children
 endfunction " }}}
 
 function! s:redraw_cui(field) " {{{
@@ -183,14 +183,14 @@ function! s:redraw_cui(field) " {{{
     let rtn += [puyo#dots#substitute_for_syntax(row)]
   endfor
 
-  if b:session.is_gameover
+  if b:puyo_session.is_gameover
     let rtn[9] .= 'ばたんきゅー'
   else
-    let rtn[9] .= printf('%d連鎖',b:session.n_chain_count)
+    let rtn[9] .= printf('%d連鎖',b:puyo_session.n_chain_count)
   endif
-  let rtn[11] .= 'score:' . printf('%08d',b:session.score)
+  let rtn[11] .= 'score:' . printf('%08d',b:puyo_session.score)
 
-  " let rtn += [b:session.voice_text]
+  " let rtn += [b:puyo_session.voice_text]
 
   return rtn
 endfunction " }}}
@@ -198,20 +198,20 @@ function! s:redraw_gui(field) " {{{
   let field = a:field
 
   let n_chain_ary = []
-  if 0 < b:session.n_chain_count
-    for c in split(printf('%02d',b:session.n_chain_count),'\zs')
+  if 0 < b:puyo_session.n_chain_count
+    for c in split(printf('%02d',b:puyo_session.n_chain_count),'\zs')
       let n_chain_ary += [ s:numbers[str2nr(c)] ]
     endfor
     let n_chain_ary += s:chain_chars
   endif
 
   let score_ary = []
-  for c in split(printf('%08d',b:session.score),'\zs')
+  for c in split(printf('%08d',b:puyo_session.score),'\zs')
     let score_ary += [ s:numbers[str2nr(c)] ]
   endfor
 
   let field[8] += repeat([s:W],8)
-  if b:session.is_gameover
+  if b:puyo_session.is_gameover
     let field[9] += s:gameover_chars + repeat([s:W],8-len(s:gameover_chars))
   else
     let field[9] += n_chain_ary + repeat([s:W],8-len(n_chain_ary))
@@ -228,7 +228,7 @@ function! s:redraw_gui(field) " {{{
   endfor
 
 
-  let wallpaper = b:session.is_puyoteto ? s:wallpaper_puyoteto() : s:wallpaper_puyo()
+  let wallpaper = b:puyo_session.is_puyoteto ? s:wallpaper_puyoteto() : s:wallpaper_puyo()
   let row_idx = 0
   for _row in wallpaper
     let col_idx = 0
@@ -246,7 +246,7 @@ function! s:redraw_gui(field) " {{{
     let rtn += [puyo#dots#substitute_for_syntax(row)]
   endfor
 
-  let &titlestring = b:session.voice_text
+  let &titlestring = b:puyo_session.voice_text
 
   return rtn
 endfunction " }}}
@@ -254,11 +254,11 @@ function! s:redraw() " {{{
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
-    let field[i] = repeat([s:W], b:session.field_width+2)
+    let field[i] = repeat([s:W], b:puyo_session.field_width+2)
   endfor
 
-  let next1 = [b:session.next1.pivot] + b:session.next1.children
-  let next2 = [b:session.next2.pivot] + b:session.next2.children
+  let next1 = [b:puyo_session.next1.pivot] + b:puyo_session.next1.children
+  let next2 = [b:puyo_session.next2.pivot] + b:puyo_session.next2.children
 
   let field[1] += [s:W          ,s:W,s:W                    ,s:W]
   let field[2] += [next1[0].kind,s:W,s:W                    ,s:W]
@@ -305,9 +305,9 @@ endfunction " }}}
 function! s:drop() " {{{
   " initialize a field for setting puyos.
   let f = []
-  for r in range(0,s:HIDDEN_ROW+b:session.field_height+1)
+  for r in range(0,s:HIDDEN_ROW+b:puyo_session.field_height+1)
     let f += [[]]
-    for c in range(0,1+b:session.field_width+1)
+    for c in range(0,1+b:puyo_session.field_width+1)
       let f[r] += [ {
             \   'id' : -1,
             \   'row' : r,
@@ -316,15 +316,15 @@ function! s:drop() " {{{
             \ } ]
     endfor
   endfor
-  for puyo in b:session.puyos
+  for puyo in b:puyo_session.puyos
     let f[puyo.row][puyo.col] = puyo
   endfor
 
   " drop teto & bubbling puyo
-  for c in range(b:session.field_width,1,-1)
+  for c in range(b:puyo_session.field_width,1,-1)
     while 1
       let b = 0
-      for r in range(0,b:session.field_height)
+      for r in range(0,b:puyo_session.field_height)
         if ! s:is_teto((f[r+1][c]).kind) && s:is_teto((f[r][c]).kind)
           let tmp = f[r+1][c]
           let f[r+1][c] = f[r][c]
@@ -339,10 +339,10 @@ function! s:drop() " {{{
   endfor
 
   " drop puyo
-  for c in range(b:session.field_width,1,-1)
+  for c in range(b:puyo_session.field_width,1,-1)
     while 1
       let b = 0
-      for r in range(0,b:session.field_height)
+      for r in range(0,b:puyo_session.field_height)
         if (f[r+1][c]).kind is s:F && s:is_puyo((f[r][c]).kind)
           let tmp = f[r][c]
           let f[r][c] = f[r+1][c]
@@ -358,8 +358,8 @@ function! s:drop() " {{{
 
   " rebuild puyos
   let new_puyos = []
-  for c in range(1,b:session.field_width)
-    for r in range(1,b:session.field_height+s:HIDDEN_ROW)
+  for c in range(1,b:puyo_session.field_width)
+    for r in range(1,b:puyo_session.field_height+s:HIDDEN_ROW)
       if (f[r][c]).kind isnot s:F
         let new_puyos += [ {
               \   'id' : (f[r][c]).id,
@@ -370,7 +370,7 @@ function! s:drop() " {{{
       endif
     endfor
   endfor
-  let b:session.puyos = new_puyos
+  let b:puyo_session.puyos = new_puyos
 endfunction " }}}
 
 " puyo
@@ -410,7 +410,7 @@ function! s:chain_puyo() " {{{
 
   call s:drop()
   while 1
-    let prev_ps = deepcopy(b:session.puyos)
+    let prev_ps = deepcopy(b:puyo_session.puyos)
     let curr_ps = deepcopy(prev_ps)
     let is_chained = 0
 
@@ -434,16 +434,16 @@ function! s:chain_puyo() " {{{
 
     if is_chained
       let chain_count += 1
-      let b:session.puyos = curr_ps
+      let b:puyo_session.puyos = curr_ps
       let tmp = (chain_bonuses[chain_count-1] + connect_bonus + color_bonuses[len(keys(color_bonus))-1])
-      let b:session.score += total * (tmp is 0 ? 1 : tmp ) * 10
-      if 99999999 < b:session.score
-        let b:session.score = 99999999
+      let b:puyo_session.score += total * (tmp is 0 ? 1 : tmp ) * 10
+      if 99999999 < b:puyo_session.score
+        let b:puyo_session.score = 99999999
       endif
       sleep 700m
       call s:drop()
-      let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
-      let b:session.n_chain_count = chain_count
+      let b:puyo_session.voice_text = get( b:puyo_session.chain_voices, chain_count-1, b:puyo_session.chain_voices[-1])
+      let b:puyo_session.n_chain_count = chain_count
 
       call puyo#play_chain_sound(chain_count)
 
@@ -487,7 +487,7 @@ function! s:chain_teto() " {{{
   let score = 0
 
   call s:drop()
-  let prev_ps = deepcopy(b:session.puyos)
+  let prev_ps = deepcopy(b:puyo_session.puyos)
   let curr_ps = deepcopy(prev_ps)
   let is_chained = 0
 
@@ -496,7 +496,7 @@ function! s:chain_teto() " {{{
 
   for puyo in prev_ps
     let n = s:recur_chain_teto(curr_ps,puyo.row,puyo.col,puyo.kind)
-    if b:session.field_width is n
+    if b:puyo_session.field_width is n
       let is_chained = 1
       let prev_ps = curr_ps
       let total += n
@@ -506,10 +506,10 @@ function! s:chain_teto() " {{{
 
   if is_chained
     let chain_count += 1
-    let b:session.puyos = curr_ps
-    let b:session.score += 1000 * total
-    if 99999999 < b:session.score
-      let b:session.score = 99999999
+    let b:puyo_session.puyos = curr_ps
+    let b:puyo_session.score += 1000 * total
+    if 99999999 < b:puyo_session.score
+      let b:puyo_session.score = 99999999
     endif
     sleep 700m
     call s:drop()
@@ -528,81 +528,95 @@ function! s:check(is_auto_drop) " {{{
   if status is 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
     call puyo#play_land_sound()
 
-    let b:session.voice_text = ''
-    let b:session.n_chain_count = 0
-    let b:session.puyos += s:dropping2list()
-    let b:session.dropping = b:session.next1
-    let b:session.next1 = b:session.next2
-    let b:session.next2 = s:next_puyo()
+    let b:puyo_session.voice_text = ''
+    let b:puyo_session.n_chain_count = 0
+    let b:puyo_session.puyos += s:dropping2list()
+    let b:puyo_session.dropping = b:puyo_session.next1
+    let b:puyo_session.next1 = b:puyo_session.next2
+    let b:puyo_session.next2 = s:next_puyo()
 
     while (s:chain_puyo() + s:chain_teto())
     endwhile
   endif
 endfunction " }}}
 function! s:turn_dropping(is_right) " {{{
-  for child in b:session.dropping.children
-    let state = [ child.row - b:session.dropping.pivot.row,
-          \       child.col - b:session.dropping.pivot.col ]
+  for child in b:puyo_session.dropping.children
+    let state = [ child.row - b:puyo_session.dropping.pivot.row,
+          \       child.col - b:puyo_session.dropping.pivot.col ]
     if     state == [ 0,-1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
-      let child.col = b:session.dropping.pivot.col
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:puyo_session.dropping.pivot.col
     elseif state == [-1, 0]
-      let child.row = b:session.dropping.pivot.row
-      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+      let child.row = b:puyo_session.dropping.pivot.row
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ?  1 : -1)
     elseif state == [ 0, 1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
-      let child.col = b:session.dropping.pivot.col
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:puyo_session.dropping.pivot.col
     elseif state == [ 1, 0]
-      let child.row = b:session.dropping.pivot.row
-      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+      let child.row = b:puyo_session.dropping.pivot.row
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ? -1 :  1)
     elseif state == [ 1, 1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
-      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ? -1 :  1)
     elseif state == [ 1,-1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
-      let child.col = b:session.dropping.pivot.col + (a:is_right ? -1 :  1)
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ? -1 :  1)
     elseif state == [-1,-1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ? -1 :  1)
-      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ? -1 :  1)
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ?  1 : -1)
     elseif state == [-1, 1]
-      let child.row = b:session.dropping.pivot.row + (a:is_right ?  1 : -1)
-      let child.col = b:session.dropping.pivot.col + (a:is_right ?  1 : -1)
+      let child.row = b:puyo_session.dropping.pivot.row + (a:is_right ?  1 : -1)
+      let child.col = b:puyo_session.dropping.pivot.col + (a:is_right ?  1 : -1)
     endif
   endfor
 endfunction " }}}
 
 function! s:key_turn(is_right) " {{{
-  let saved_dropping_puyos = deepcopy(b:session.dropping)
+  let saved_dropping_puyos = deepcopy(b:puyo_session.dropping)
 
   call s:turn_dropping(a:is_right)
 
   if ! s:movable(s:dropping2list(),0,0)
-    let b:session.dropping = saved_dropping_puyos
+    let b:puyo_session.dropping = saved_dropping_puyos
 
     " left
     if 1 is s:move_puyo(0,-1,s:dropping2list())
       call s:turn_dropping(a:is_right)
       if ! s:movable(s:dropping2list(),0,0)
-        let b:session.dropping = saved_dropping_puyos
+        let b:puyo_session.dropping = saved_dropping_puyos
       endif
 
       " right
     elseif 1 is s:move_puyo(0,1,s:dropping2list())
       call s:turn_dropping(a:is_right)
       if ! s:movable(s:dropping2list(),0,0)
-        let b:session.dropping = saved_dropping_puyos
+        let b:puyo_session.dropping = saved_dropping_puyos
       endif
 
     else
       call s:turn_dropping(a:is_right)
       call s:turn_dropping(a:is_right)
       if ! s:movable(s:dropping2list(),0,0)
-        let b:session.dropping = saved_dropping_puyos
+        let b:puyo_session.dropping = saved_dropping_puyos
       endif
 
     endif
 
   endif
+
+  " for child in b:puyo_session.dropping.children
+  "   let saved_row = child.row
+  "   let saved_col = child.col
+  "   for puyo in b:puyo_session.puyos
+  "     if         (puyo.row is child.row && puyo.col is child.col)
+  "           \ || (b:puyo_session.field_height < child.row)
+  "           \ || (child.col < 1)
+  "           \ || (b:puyo_session.field_width < child.col)
+  "       let b:puyo_session.dropping = saved_dropping_puyos
+  "       break
+  "     endif
+  "   endfor
+  " endfor
 
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
@@ -628,7 +642,7 @@ function! s:key_down() " {{{
   else
     let status = s:move_puyo(1,0,s:dropping2list())
     if -1 is status
-      let b:session.is_gameover = 1
+      let b:puyo_session.is_gameover = 1
     endif
     " reset
     let s:floatting_count = 0
@@ -647,7 +661,7 @@ function! s:key_quickdrop() " {{{
   while 1
     let status = s:move_puyo(1,0,s:dropping2list())
     if -1 is status
-      let b:session.is_gameover = 1
+      let b:puyo_session.is_gameover = 1
       break
     elseif 0 is status
       break
@@ -681,15 +695,17 @@ function! s:key_quit() " {{{
       autocmd!
     augroup END
 
-    let &maxfuncdepth = b:session.backup.maxfuncdepth
-    let &guifont = b:session.backup.guifont
-    let &updatetime = b:session.backup.updatetime
-    let &titlestring = b:session.backup.titlestring
-    let &spell = b:session.backup.spell
-    let &wrap = b:session.backup.wrap
+    let &maxfuncdepth = b:puyo_session.backup.maxfuncdepth
+    let &guifont = b:puyo_session.backup.guifont
+    let &updatetime = b:puyo_session.backup.updatetime
+    let &titlestring = b:puyo_session.backup.titlestring
+    let &spell = b:puyo_session.backup.spell
+    let &wrap = b:puyo_session.backup.wrap
+    let &number = b:puyo_session.backup.number
+    let &list = b:puyo_session.backup.list
     if has('gui_running')
-      let &columns = b:session.backup.columns
-      let &lines = b:session.backup.lines
+      let &columns = b:puyo_session.backup.columns
+      let &lines = b:puyo_session.backup.lines
     endif
     bdelete!
   endif
@@ -727,10 +743,12 @@ function! s:init_session(is_puyoteto, is_restart) " {{{
         \     'ばよえ～ん',
         \     ])
   if a:is_restart
-    let session['backup'] = b:session['backup']
+    let session['backup'] = b:puyo_session['backup']
   else
     let session['backup'] = {
           \     'guifont' : &guifont,
+          \     'list' : &list,
+          \     'number' : &number,
           \     'spell' : &spell,
           \     'updatetime' : &updatetime,
           \     'maxfuncdepth' : &maxfuncdepth,
@@ -741,11 +759,11 @@ function! s:init_session(is_puyoteto, is_restart) " {{{
           \ }
   endif
 
-  let b:session = deepcopy(session)
+  let b:puyo_session = deepcopy(session)
 
-  let b:session['dropping'] = s:next_puyo()
-  let b:session['next1'] = s:next_puyo()
-  let b:session['next2'] = s:next_puyo()
+  let b:puyo_session['dropping'] = s:next_puyo()
+  let b:puyo_session['next1'] = s:next_puyo()
+  let b:puyo_session['next2'] = s:next_puyo()
 endfunction " }}}
 
 
@@ -763,6 +781,8 @@ function! puyo#new(...) " {{{
   let &l:maxfuncdepth = 1000
   let &l:spell = 0
   let &l:wrap = 0
+  let &l:number = 0
+  let &l:list = 0
 
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
@@ -775,6 +795,10 @@ function! puyo#new(...) " {{{
   else
   endif
 
+  nnoremap <silent><buffer> i <nop>
+  nnoremap <silent><buffer> a <nop>
+  nnoremap <silent><buffer> I <nop>
+  nnoremap <silent><buffer> A <nop>
   nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check(0)<cr>
   nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
   nnoremap <silent><buffer> h :call <sid>key_left()<cr>
@@ -782,7 +806,7 @@ function! puyo#new(...) " {{{
   nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
-  nnoremap <silent><buffer> r :call <sid>init_session(b:session.is_puyoteto,1)<cr>
+  nnoremap <silent><buffer> r :call <sid>init_session(b:puyo_session.is_puyoteto,1)<cr>
 
   augroup Puyo
     autocmd!
