@@ -34,3 +34,7 @@ __PuyoTeto__
 
 ![](https://raw.github.com/rbtnn/puyo.vim/puyoteto/puyoteto.png)
 
+
+# LICENSE
+
+Distributed under MIT License. See LICENSE.txt
