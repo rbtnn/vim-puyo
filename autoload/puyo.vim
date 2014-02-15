@@ -313,6 +313,10 @@ endfunction " }}}
 
 " Algo {{{
 
+function! s:hoge(f,row) " {{{
+  
+endfunction " }}}
+
 function! s:drop() " {{{
   " initialize a field for setting puyos.
   let f = []
