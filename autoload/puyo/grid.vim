@@ -153,6 +153,6 @@ function! puyo#grid#test() " {{{
   call puyo#grid#hoge(gs[1],grid3).print()
 endfunction " }}}
 
-call puyo#grid#test()
+" call puyo#grid#test()
 
 "  vim: set ts=8 sts=2 sw=2 ft=vim fdm=marker ff=unix :
