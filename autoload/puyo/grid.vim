@@ -27,23 +27,34 @@ function! s:grid_obj.bounds_check(row,col) " {{{
   endif
   return 1
 endfunction " }}}
-function! s:grid_obj.data(data) " {{{
+function! s:grid_obj.data(data,default) " {{{
   let self['_data'] = []
   for _row in range(0,self.height()-1)
     let tmp = []
     for _col in range(0,self.width()-1)
-      let tmp += [ get(get(a:data,_row,[]), _col, self._default) ]
+      let tmp += [ get(get(a:data,_row,[]), _col, a:default) ]
     endfor
     let self['_data'] += [tmp]
   endfor
+endfunction " }}}
+function! s:grid_obj.get_data(default) " {{{
+  let data = []
+  for _row in range(0,self.height()-1)
+    let row = []
+    for _col in range(0,self.width()-1)
+      let row += [ get(get(self._data,_row,[]), _col, a:default) ]
+    endfor
+    let data += [row]
+  endfor
+  return data
 endfunction " }}}
 function! s:grid_obj.clone() " {{{
   return deepcopy(self)
 endfunction " }}}
 function! s:grid_obj.swap(row1,col1,row2,col2) " {{{
-  let tmp = self.get(row1,col1)
-  call self.set(row1,col1, self.get(row2,col2) )
-  call self.set(row2,col2, tmp )
+  let Tmp = self.get(a:row1, a:col1)
+  call self.set(a:row1, a:col1, self.get(a:row2, a:col2) )
+  call self.set(a:row2, a:col2, Tmp )
 endfunction " }}}
 function! s:grid_obj.print() " {{{
   for row in range(0,self.height()-1)
@@ -54,14 +65,14 @@ function! s:grid_obj.print() " {{{
     echo str
   endfor
 endfunction " }}}
-function! s:grid_obj.split(pred) " {{{
-  let grid1 = puyo#grid#new(self.height(),self.width())
-  let grid2 = puyo#grid#new(self.height(),self.width())
+function! s:grid_obj.split(pred,default) " {{{
+  let grid1 = puyo#grid#new(self.height(),self.width(),[],0)
+  let grid2 = puyo#grid#new(self.height(),self.width(),[],0)
   for row in range(0,self.height()-1)
     for col in range(0,self.width()-1)
       let x = self.get(row,col)
-      call grid1.set(row,col, (  a:pred(self,row,col) ? x : self._default) )
-      call grid2.set(row,col, (! a:pred(self,row,col) ? x : self._default) )
+      call grid1.set(row,col, (  a:pred(self,row,col) ? x : a:default) )
+      call grid2.set(row,col, (! a:pred(self,row,col) ? x : a:default) )
     endfor
   endfor
   return [grid1,grid2]
@@ -71,38 +82,37 @@ function! s:grid_obj.size(height,width) " {{{
   let self['_height'] = a:height
 endfunction " }}}
 
-function! puyo#grid#new(height,width,...) " {{{
+function! puyo#grid#new(height,width,data,default) " {{{
   let obj = deepcopy(s:grid_obj)
-  let obj['_default'] = 0
   let obj['_out_of_bounds'] = -1
   " initialize data
   call obj.size(a:height,a:width)
-  call obj.data((0 < a:0) ? (a:1) : [])
+  call obj.data(a:data, a:default)
   return obj
 endfunction " }}}
 
 
-function! puyo#grid#is_overlap(grid1,grid2) " {{{
+function! puyo#grid#is_overlap(grid1,grid2,default) " {{{
   for col in range(0,a:grid1.width()-1)
     for row in range(0,a:grid1.height()-1)
-      if   a:grid1.get(row,col) isnot a:grid1._default
-            \ && a:grid2.get(row,col) isnot a:grid2._default
+      if   a:grid1.get(row,col) isnot a:default
+            \ && a:grid2.get(row,col) isnot a:default
         return 1
       endif
     endfor
   endfor
   return 0
 endfunction " }}}
-function! puyo#grid#hoge(teto,puyo) " {{{
+function! puyo#grid#hoge(teto,puyo,default) " {{{
   let out = a:teto.clone()
   let height = out.height()
   let width = out.width()
   for col in range(0,width-1)
     let i = height - 1
     for row in range(height-1,0,-1)
-      if out.get(row,col) is out._default
+      if out.get(row,col) is a:default
         for x in range(i,0,-1)
-          if a:puyo.get(row,x) isnot a:puyo._default
+          if a:puyo.get(row,x) isnot a:default
             call out.set(row,col,a:puyo.get(row,x))
             let i = x - 1
             break
@@ -144,13 +154,13 @@ function! puyo#grid#test() " {{{
         \   [0,2,2,2],
         \   [0,0,2,0],
         \ ])
-  let gs = grid1.split(function('s:pred'))
+  let gs = grid1.split(function('s:pred'),0)
   " echo puyo#grid#is_overlap(gs[0],gs[1])
   " call gs[0].set(0,0,1)
   " echo puyo#grid#is_overlap(gs[0],gs[1])
   " call gs[0].print()
   " call gs[0].print()
-  call puyo#grid#hoge(gs[1],grid3).print()
+  call puyo#grid#hoge(gs[1],grid3,0).print()
 endfunction " }}}
 
 " call puyo#grid#test()
