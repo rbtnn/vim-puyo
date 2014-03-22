@@ -418,6 +418,13 @@ function! s:puyo_obj._initialize(is_puyoteto, is_restart) " {{{
         \ imgs.teto.block1,
         \ imgs.teto.block2,
         \ ]
+  let self['pause_chars'] = [
+        \ imgs.alphabet.capital_p,
+        \ imgs.alphabet.capital_a,
+        \ imgs.alphabet.capital_u,
+        \ imgs.alphabet.capital_s,
+        \ imgs.alphabet.capital_e,
+        \ ]
   let self['gameover_chars'] = [
         \ imgs.hiragana.ba,
         \ imgs.hiragana.ta,
@@ -595,6 +602,10 @@ function! s:puyo_obj._redraw_gui(field) " {{{
   let field[8] += repeat([self.W],8)
   if self.game_status is# 'gameover'
     let field[9] += self.gameover_chars + repeat([self.W],8-len(self.gameover_chars))
+  elseif self.game_status is# 'pausing'
+    for i in range(0, len(self.pause_chars) - 1)
+      let field[7][i + 1] = self.pause_chars[i]
+    endfor
   else
     let field[9] += n_chain_ary + repeat([self.W],8-len(n_chain_ary))
   endif

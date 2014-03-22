@@ -15,6 +15,13 @@ let s:colors = {
       \  }
 
 let s:images = {
+      \   'alphabet' : {
+      \     'capital_p'  : function('puyo#dots#alphabet#capital_p#data'),
+      \     'capital_a'  : function('puyo#dots#alphabet#capital_a#data'),
+      \     'capital_u'  : function('puyo#dots#alphabet#capital_u#data'),
+      \     'capital_s'  : function('puyo#dots#alphabet#capital_s#data'),
+      \     'capital_e'  : function('puyo#dots#alphabet#capital_e#data'),
+      \   },
       \   'teto' : {
       \     'block1'  : function('puyo#dots#teto#block1#data'),
       \     'block2'  : function('puyo#dots#teto#block2#data'),
