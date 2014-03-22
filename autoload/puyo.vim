@@ -7,20 +7,20 @@ let s:List = s:V.import('Data.List')
 call s:Random.srand()
 
 let s:puyo_obj = {}
-function! s:puyo_obj._is_puyo(kind) " {{{
+function! s:puyo_obj.is_puyo(kind) " {{{
   return -1 isnot index(self.puyo_colors, a:kind)
 endfunction " }}}
-function! s:puyo_obj._is_teto(kind) " {{{
+function! s:puyo_obj.is_teto(kind) " {{{
   return -1 isnot index(self.teto_colors, a:kind)
 endfunction " }}}
 
-function! s:puyo_obj._drop() " {{{
+function! s:puyo_obj.drop_puyo() " {{{
   " drop puyo
-  for c in range(1, self.field_width)
+  for c in self.enable_range_of_field_width
     while 1
       let b = 0
-      for r in range(self.field_height + self.HIDDEN_ROW - 1, 0, -1)
-        if self.puyogrid.get(r+1, c) is self.F && self._is_puyo(self.puyogrid.get(r, c))
+      for r in reverse(self.enable_range_of_field_height)
+        if self.puyogrid.get(r+1, c) is self.F && self.is_puyo(self.puyogrid.get(r, c))
           call self.puyogrid.swap(r+1, c, r, c)
           let b = 1
         endif
@@ -31,28 +31,27 @@ function! s:puyo_obj._drop() " {{{
     endwhile
   endfor
 endfunction " }}}
-
-function! s:puyo_obj._recur_chain_puyo(puyogrid, row, col, kind) " {{{
+function! s:puyo_obj.recur_chain_puyo(puyogrid, row, col, kind) " {{{
   let cnt = 0
   if a:kind isnot self.F
-    for row in range(0, self.field_height + self.HIDDEN_ROW - 1)
-      for col in range(1, self.field_width)
-        if self._is_puyo(a:puyogrid.get(row, col))
+    for row in self.enable_range_of_field_height
+      for col in self.enable_range_of_field_width
+        if self.is_puyo(a:puyogrid.get(row, col))
           if a:puyogrid.get(row, col) is a:kind && row is a:row && col is a:col
             let cnt += 1
             call a:puyogrid.set(row, col, self.F)
           endif
           if a:puyogrid.get(row, col) is a:kind && row is a:row && col is a:col - 1
-            let cnt += self._recur_chain_puyo(a:puyogrid, a:row, a:col - 1, a:kind)
+            let cnt += self.recur_chain_puyo(a:puyogrid, a:row, a:col - 1, a:kind)
           endif
           if a:puyogrid.get(row, col) is a:kind && row is a:row && col is a:col + 1
-            let cnt += self._recur_chain_puyo(a:puyogrid, a:row, a:col + 1, a:kind)
+            let cnt += self.recur_chain_puyo(a:puyogrid, a:row, a:col + 1, a:kind)
           endif
           if a:puyogrid.get(row, col) is a:kind && row is a:row - 1 && col is a:col
-            let cnt += self._recur_chain_puyo(a:puyogrid, a:row - 1, a:col, a:kind)
+            let cnt += self.recur_chain_puyo(a:puyogrid, a:row - 1, a:col, a:kind)
           endif
           if a:puyogrid.get(row, col) is a:kind && row is a:row + 1 && col is a:col
-            let cnt += self._recur_chain_puyo(a:puyogrid, a:row + 1, a:col, a:kind)
+            let cnt += self.recur_chain_puyo(a:puyogrid, a:row + 1, a:col, a:kind)
           endif
         endif
       endfor
@@ -60,27 +59,7 @@ function! s:puyo_obj._recur_chain_puyo(puyogrid, row, col, kind) " {{{
   endif
   return cnt
 endfunction " }}}
-function! s:puyo_obj._recur_chain_teto(puyos,row,col,kind) " {{{
-  let cnt = 0
-  if a:kind isnot self.F
-    for i in range(0,len(a:puyos)-1)
-      if self._is_teto(a:puyos[i].kind)
-        if a:puyos[i].row is a:row && a:puyos[i].col is a:col
-          let cnt += 1
-          let a:puyos[i].kind = self.F
-        endif
-        if a:puyos[i].row is a:row && a:puyos[i].col is a:col - 1
-          let cnt += self._recur_chain_teto(a:puyos,a:row,a:col-1,a:kind)
-        endif
-        if a:puyos[i].row is a:row && a:puyos[i].col is a:col + 1
-          let cnt += self._recur_chain_teto(a:puyos,a:row,a:col+1,a:kind)
-        endif
-      endif
-    endfor
-  endif
-  return cnt
-endfunction " }}}
-function! s:puyo_obj._chain_puyo() " {{{
+function! s:puyo_obj.chain_puyo() " {{{
   let chain_bonuses = [0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 388, 416, 448, 480, 512]
   let connect_bonuses = [0,2,3,4,5,6,7,10,10,10,10,10,10,10,10,10,10,10]
   let color_bonuses = [0,3,6,12,24]
@@ -88,7 +67,7 @@ function! s:puyo_obj._chain_puyo() " {{{
   let score = 0
   let chain_count = 0
 
-  call self._drop()
+  call self.drop_puyo()
   while 1
     let prev_ps = deepcopy(self.puyogrid)
     let curr_ps = deepcopy(prev_ps)
@@ -99,10 +78,10 @@ function! s:puyo_obj._chain_puyo() " {{{
     let connect_bonus = 0
     let color_bonus = {}
 
-    for row in range(0, self.field_height + self.HIDDEN_ROW - 1)
-      for col in range(1, self.field_width)
-        if self._is_puyo(curr_ps.get(row, col))
-          let n = self._recur_chain_puyo(curr_ps, row, col, curr_ps.get(row, col))
+    for row in self.enable_range_of_field_height
+      for col in self.enable_range_of_field_width
+        if self.is_puyo(curr_ps.get(row, col))
+          let n = self.recur_chain_puyo(curr_ps, row, col, curr_ps.get(row, col))
           if 4 <= n
             let is_chained = 1
             let prev_ps = curr_ps
@@ -125,13 +104,13 @@ function! s:puyo_obj._chain_puyo() " {{{
         let self.score = 99999999
       endif
       sleep 700m
-      call self._drop()
+      call self.drop_puyo()
       let self.voice_text = get( self.chain_voices, chain_count-1, self.chain_voices[-1])
       let self.n_chain_count = chain_count
 
       call self.redraw()
     else
-      call self._drop()
+      call self.drop_puyo()
       call self.redraw()
       break
     endif
@@ -144,7 +123,7 @@ function! s:puyo_obj._chain_puyo() " {{{
   return chain_count
 endfunction " }}}
 
-function! s:puyo_obj._movable(puyos,row,col) " {{{
+function! s:puyo_obj.movable(dropping_puyos,row,col) " {{{
   " return -1 if gameover.
   " return 0 if can not move.
   " return 1 if can move.
@@ -159,13 +138,13 @@ function! s:puyo_obj._movable(puyos,row,col) " {{{
     return -1
   endif
 
-  " let &titlestring = string(a:puyos)
+  " let &titlestring = string(a:dropping_puyos)
 
-  for puyo in a:puyos
-    if self.field_height + self.HIDDEN_ROW <= puyo.row + a:row || puyo.row + a:row < 0
+  for puyo in a:dropping_puyos
+    if -1 is index(self.enable_range_of_field_height, puyo.row + a:row)
       return 0
     endif
-    if self.field_width < puyo.col + a:col || puyo.col + a:col <= 0
+    if -1 is index(self.enable_range_of_field_width, puyo.col + a:col)
       return 0
     endif
 
@@ -182,26 +161,26 @@ function! s:puyo_obj._movable(puyos,row,col) " {{{
 
   return 1
 endfunction " }}}
-function! s:puyo_obj._check(is_auto_drop) " {{{
-  let status = self._movable(self._dropping2list(),1,0)
+function! s:puyo_obj.check(is_auto_drop) " {{{
+  let status = self.movable(self.dropping2list(),1,0)
   if status is 0 && (a:is_auto_drop ? (self.floatting_count >= self.MAX_FLOATTING_COUNT) : 1)
 
     let self.voice_text = ''
     let self.n_chain_count = 0
 
-    for x in self._dropping2list()
+    for x in self.dropping2list()
       call self.puyogrid.set(x.row, x.col, x.kind)
     endfor
 
     let self.dropping = self.next1
     let self.next1 = self.next2
-    let self.next2 = self._next()
+    let self.next2 = self.next()
 
-    while (self._chain_puyo())
+    while (self.chain_puyo())
     endwhile
   endif
 endfunction " }}}
-function! s:puyo_obj._turn_dropping(is_right) " {{{
+function! s:puyo_obj.turn_dropping(is_right) " {{{
   for child in self.dropping.children
     let state = [ child.row - self.dropping.pivot.row,
           \       child.col - self.dropping.pivot.col ]
@@ -233,41 +212,41 @@ function! s:puyo_obj._turn_dropping(is_right) " {{{
   endfor
 endfunction " }}}
 
-function! s:puyo_obj._key_turn(is_right) " {{{
+function! s:puyo_obj.key_turn(is_right) " {{{
   let saved_dropping_puyos = deepcopy(self.dropping)
 
   try
 
     " turn
-    call self._turn_dropping(a:is_right)
-    if self._movable(self._dropping2list(),0,0)
+    call self.turn_dropping(a:is_right)
+    if self.movable(self.dropping2list(),0,0)
       throw 1
     else
       let self.dropping = saved_dropping_puyos
     endif
 
     " move left and turn if right-side.
-    call self._move_puyo(0,-1,self._dropping2list())
-    call self._turn_dropping(a:is_right)
-    if self._movable(self._dropping2list(),0,0)
+    call self.move_puyo(0,-1,self.dropping2list())
+    call self.turn_dropping(a:is_right)
+    if self.movable(self.dropping2list(),0,0)
       throw 1
     else
       let self.dropping = saved_dropping_puyos
     endif
 
     " move right and turn if left-side.
-    call self._move_puyo(0,1,self._dropping2list())
-    call self._turn_dropping(a:is_right)
-    if self._movable(self._dropping2list(),0,0)
+    call self.move_puyo(0,1,self.dropping2list())
+    call self.turn_dropping(a:is_right)
+    if self.movable(self.dropping2list(),0,0)
       throw 1
     else
       let self.dropping = saved_dropping_puyos
     endif
 
     " quick-turn
-    call self._turn_dropping(a:is_right)
-    call self._turn_dropping(a:is_right)
-    if self._movable(self._dropping2list(),0,0)
+    call self.turn_dropping(a:is_right)
+    call self.turn_dropping(a:is_right)
+    if self.movable(self.dropping2list(),0,0)
       throw 1
     else
       let self.dropping = saved_dropping_puyos
@@ -278,31 +257,18 @@ function! s:puyo_obj._key_turn(is_right) " {{{
   finally
     let self.floatting_count += 1000
     if self.MAX_FLOATTING_COUNT < self.floatting_count
-      call self._key_down()
-      call self._check(0)
+      call self.key_down()
+      call self.check(0)
     endif
     call self.redraw()
   endtry
-  " for child in self.dropping.children
-  "   let saved_row = child.row
-  "   let saved_col = child.col
-  "   for puyo in self.puyogrid
-  "     if         (puyo.row is child.row && puyo.col is child.col)
-  "           \ || (self.field_height < child.row)
-  "           \ || (child.col < 1)
-  "           \ || (self.field_width < child.col)
-  "       let self.dropping = saved_dropping_puyos
-  "       break
-  "     endif
-  "   endfor
-  " endfor
 endfunction " }}}
-function! s:puyo_obj._key_down() " {{{
-  let status = self._movable(self._dropping2list(),1,0)
+function! s:puyo_obj.key_down() " {{{
+  let status = self.movable(self.dropping2list(),1,0)
   if 0 is status
     let self.floatting_count = self.MAX_FLOATTING_COUNT
   else
-    let status = self._move_puyo(1,0,self._dropping2list())
+    let status = self.move_puyo(1,0,self.dropping2list())
     if -1 is status
       let self.game_status = 'gameover'
     endif
@@ -314,9 +280,9 @@ function! s:puyo_obj._key_down() " {{{
   endif
   call self.redraw()
 endfunction " }}}
-function! s:puyo_obj._key_quickdrop() " {{{
+function! s:puyo_obj.key_quickdrop() " {{{
   while 1
-    let status = self._move_puyo(1,0,self._dropping2list())
+    let status = self.move_puyo(1,0,self.dropping2list())
     if -1 is status
       let self.game_status = 'gameover'
       break
@@ -328,23 +294,23 @@ function! s:puyo_obj._key_quickdrop() " {{{
   " reset
   let self.floatting_count = 0
 endfunction " }}}
-function! s:puyo_obj._key_right() " {{{
-  call self._move_puyo(0,1,self._dropping2list())
+function! s:puyo_obj.key_right() " {{{
+  call self.move_puyo(0,1,self.dropping2list())
   let self.floatting_count += 1000
   if self.MAX_FLOATTING_COUNT < self.floatting_count
-    call self._key_down()
+    call self.key_down()
   endif
   call self.redraw()
 endfunction " }}}
-function! s:puyo_obj._key_left() " {{{
-  call self._move_puyo(0,-1,self._dropping2list())
+function! s:puyo_obj.key_left() " {{{
+  call self.move_puyo(0,-1,self.dropping2list())
   let self.floatting_count += 1000
   if self.MAX_FLOATTING_COUNT < self.floatting_count
-    call self._key_down()
+    call self.key_down()
   endif
   call self.redraw()
 endfunction " }}}
-function! s:puyo_obj._key_pause() " {{{
+function! s:puyo_obj.key_pause() " {{{
   if self.game_status is# 'playing'
     let self.game_status = 'pausing'
   elseif self.game_status is# 'pausing'
@@ -352,14 +318,14 @@ function! s:puyo_obj._key_pause() " {{{
   endif
   call self.redraw()
 endfunction " }}}
-function! s:puyo_obj._key_none() " {{{
+function! s:puyo_obj.key_none() " {{{
   call self.redraw()
   " reset
   let self.floatting_count = 0
 endfunction " }}}
 
-function! s:puyo_obj._move_puyo(row,col,puyos) " {{{
-  let status = self._movable(a:puyos,a:row,a:col)
+function! s:puyo_obj.move_puyo(row,col,puyos) " {{{
+  let status = self.movable(a:puyos,a:row,a:col)
   if status is 1
     for puyo in a:puyos
       let puyo.row += a:row
@@ -369,11 +335,11 @@ function! s:puyo_obj._move_puyo(row,col,puyos) " {{{
   return status
 endfunction " }}}
 
-function! s:puyo_obj._dropping2list() " {{{
+function! s:puyo_obj.dropping2list() " {{{
   return [self.dropping.pivot] + self.dropping.children
 endfunction " }}}
 
-function! s:puyo_obj._initialize(is_puyoteto, is_restart) " {{{
+function! s:puyo_obj.initialize(is_puyoteto, is_restart) " {{{
   let unix_p = has('unix') && ! has('mac')
   let windows_p = has('win95') || has('win16') || has('win32') || has('win64')
   let cygwin_p = has('win32unix')
@@ -453,6 +419,9 @@ function! s:puyo_obj._initialize(is_puyoteto, is_restart) " {{{
   let height = self.field_height + self.HIDDEN_ROW + 1
   let width = self.field_width + 2
 
+  let self['enable_range_of_field_width'] = range(1, self.field_width)
+  let self['enable_range_of_field_height'] = range(0, self.field_height + self.HIDDEN_ROW - 1)
+
   let self['puyogrid'] = puyo#grid#new(height, width, [], self.F)
 
   for i in range(0, height - 1)
@@ -499,9 +468,9 @@ function! s:puyo_obj._initialize(is_puyoteto, is_restart) " {{{
           \ }
   endif
 
-  let self['dropping'] = self._next()
-  let self['next1'] = self._next()
-  let self['next2'] = self._next()
+  let self['dropping'] = self.next()
+  let self['next1'] = self.next()
+  let self['next2'] = self.next()
 
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
@@ -527,7 +496,7 @@ function! s:puyo_obj._initialize(is_puyoteto, is_restart) " {{{
     let &lines = 999
   endif
 endfunction " }}}
-function! s:puyo_obj._finalize() " {{{
+function! s:puyo_obj.finalize() " {{{
   augroup Puyo
     autocmd!
   augroup END
@@ -546,22 +515,22 @@ function! s:puyo_obj._finalize() " {{{
   endif
 endfunction " }}}
 
-function! s:puyo_obj._autoevent() " {{{
+function! s:puyo_obj.autoevent() " {{{
   if &filetype is# self.filetype
     try
       if self.game_status is# 'playing'
-        call self._key_down()
-        call self._check(1)
+        call self.key_down()
+        call self.check(1)
       endif
     catch
     endtry
     call feedkeys(mode() is# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
   else
-    call self._finalize()
+    call self.finalize()
   endif
 endfunction " }}}
 
-function! s:puyo_obj._redraw_cui(field) " {{{
+function! s:puyo_obj.redraw_cui(field) " {{{
   let field = []
   for row_ in a:field
     let field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
@@ -583,7 +552,7 @@ function! s:puyo_obj._redraw_cui(field) " {{{
 
   return rtn
 endfunction " }}}
-function! s:puyo_obj._redraw_gui(field) " {{{
+function! s:puyo_obj.redraw_gui(field) " {{{
   let field = a:field
 
   let n_chain_ary = []
@@ -643,7 +612,7 @@ function! s:puyo_obj._redraw_gui(field) " {{{
 endfunction " }}}
 function! s:puyo_obj.redraw() " {{{
   let grid = self.puyogrid.clone()
-  for x in self._dropping2list()
+  for x in self.dropping2list()
     call grid.set(x.row, x.col, x.kind)
   endfor
   let field = grid.get_data(self.F)
@@ -662,9 +631,9 @@ function! s:puyo_obj.redraw() " {{{
   let field[5] += [self.W        ,self.W,self.W        ,self.W]
 
   if has('gui_running')
-    let rtn = self._redraw_gui(field)
+    let rtn = self.redraw_gui(field)
   else
-    let rtn = self._redraw_cui(field)
+    let rtn = self.redraw_cui(field)
   endif
 
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
@@ -672,7 +641,7 @@ function! s:puyo_obj.redraw() " {{{
   redraw
 endfunction " }}}
 
-function! s:puyo_obj._next_puyo() " {{{
+function! s:puyo_obj.next_puyo() " {{{
   let pivot = {
         \   'id' : self.id,
         \   'row' : 0,
@@ -688,7 +657,7 @@ function! s:puyo_obj._next_puyo() " {{{
   let self.id += 1
   return { 'pivot' : pivot, 'children' : children }
 endfunction " }}}
-function! s:puyo_obj._next_teto() " {{{
+function! s:puyo_obj.next_teto() " {{{
   let i = abs(s:Random.rand()) % len(self.teto_colors)
   let pivot = {
         \   'id' : self.id,
@@ -713,18 +682,18 @@ function! s:puyo_obj._next_teto() " {{{
   let self.id += 1
   return { 'pivot' : pivot, 'children' : children }
 endfunction " }}}
-function! s:puyo_obj._next() " {{{
+function! s:puyo_obj.next() " {{{
   if self.is_puyoteto && (abs(s:Random.rand()) % 2)
-    return self._next_teto()
+    return self.next_teto()
   else
-    return self._next_puyo()
+    return self.next_puyo()
   endif
 endfunction " }}}
 
 function! s:puyo_obj.open(is_puyoteto) " {{{
   call puyo#buffer#uniq_open("[puyo]",[],"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
-  call self._initialize(a:is_puyoteto, 0)
+  call self.initialize(a:is_puyoteto, 0)
   let &l:filetype = self.filetype
   only
   call self.redraw()
@@ -732,7 +701,7 @@ function! s:puyo_obj.open(is_puyoteto) " {{{
 endfunction " }}}
 function! s:puyo_obj.close() " {{{
   if &filetype is# self.filetype
-    call self._finalize()
+    call self.finalize()
     bdelete!
   endif
 endfunction " }}}
@@ -742,30 +711,30 @@ function! s:puyo_obj.sendkey(keyname) " {{{
   elseif a:keyname is# 'quit'
     call self.close()
   elseif a:keyname is# 'restart'
-    call self._initialize(self.is_puyoteto,1)
+    call self.initialize(self.is_puyoteto,1)
 
   elseif self.game_status is# 'playing'
     if a:keyname is# 'quickdrop'
-      call self._key_quickdrop()
-      call self._check(0)
+      call self.key_quickdrop()
+      call self.check(0)
     elseif a:keyname is# 'left'
-      call self._key_left()
+      call self.key_left()
     elseif a:keyname is# 'right'
-      call self._key_right()
+      call self.key_right()
     elseif a:keyname is# 'turnright'
-      call self._key_turn(1)
+      call self.key_turn(1)
     elseif a:keyname is# 'turnleft'
-      call self._key_turn(0)
+      call self.key_turn(0)
     elseif a:keyname is# 'down'
-      call self._key_down()
-      call self._check(0)
+      call self.key_down()
+      call self.check(0)
     elseif a:keyname is# 'pause'
-      call self._key_pause()
+      call self.key_pause()
     endif
 
   elseif self.game_status is# 'pausing'
     if a:keyname is# 'pause'
-      call self._key_pause()
+      call self.key_pause()
     endif
 
   endif
@@ -790,7 +759,7 @@ function! puyo#new(...) " {{{
 
   augroup Puyo
     autocmd!
-    autocmd CursorHold,CursorHoldI * call g:puyo_session._autoevent()
+    autocmd CursorHold,CursorHoldI * call g:puyo_session.autoevent()
   augroup END
 endfunction " }}}
 
