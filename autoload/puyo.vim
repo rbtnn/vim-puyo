@@ -1,7 +1,7 @@
 
 scriptencoding utf-8
 
-let s:V = vital#of('puyo.vim')
+let s:V = vital#of('game_engine.vim')
 let s:Random = s:V.import('Random.Xor128')
 let s:List = s:V.import('Data.List')
 call s:Random.srand()
@@ -22,7 +22,7 @@ let s:mac_p = ! s:windows_p
 
 let s:clrs = puyo#dots#colors()
 let s:imgs = puyo#dots#images()
-" {{{
+
 let s:wallpaper = s:imgs.wallpapers.defaut
 let s:W = s:imgs.wall
 let s:F = s:imgs.field
@@ -58,7 +58,7 @@ let s:chain_chars = [
       \ s:imgs.hiragana.nn,
       \ s:imgs.hiragana.sa,
       \ ]
-" }}}
+
 
 let s:HIDDEN_ROW = 2
 let s:FIELD_WIDTH = 6
@@ -68,7 +68,7 @@ let s:DROPPING_POINT = 3
 let s:MAX_FLOATTING_COUNT = 5000
 let s:floatting_count = 0
 
-function! s:make_field_array(contained_dropping) " {{{
+function! s:make_field_array(contained_dropping)
   let f = []
   for h in range(1,s:FIELD_HEIGHT+s:HIDDEN_ROW)
     let f += [[s:W]+repeat([s:F],s:FIELD_WIDTH)+[s:W]]
@@ -81,8 +81,8 @@ function! s:make_field_array(contained_dropping) " {{{
     endif
   endfor
   return f
-endfunction " }}}
-function! s:movable(puyos,row,col) " {{{
+endfunction
+function! s:movable(puyos,row,col)
   let f = s:make_field_array(0)
 
   let is_gameover = 1
@@ -112,9 +112,9 @@ function! s:movable(puyos,row,col) " {{{
   endfor
 
   return 1
-endfunction " }}}
+endfunction
 
-function! s:next_puyo() " {{{
+function! s:next_puyo()
   return [
         \   {
         \     'row' : 0,
@@ -127,9 +127,9 @@ function! s:next_puyo() " {{{
         \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
         \   },
         \ ]
-endfunction " }}}
+endfunction
 
-function! s:redraw_cui(field) " {{{
+function! s:redraw_cui(field)
   let field = []
   for row_ in a:field
     let field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
@@ -150,8 +150,8 @@ function! s:redraw_cui(field) " {{{
   " let rtn += [b:session.voice_text]
 
   return rtn
-endfunction " }}}
-function! s:redraw_gui(field) " {{{
+endfunction
+function! s:redraw_gui(field)
   let field = a:field
 
   let n_chain_ary = []
@@ -184,7 +184,6 @@ function! s:redraw_gui(field) " {{{
     let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
   endfor
 
-
   let wallpaper = s:wallpaper()
   let row_idx = 0
   for _row in wallpaper
@@ -206,8 +205,8 @@ function! s:redraw_gui(field) " {{{
   let &titlestring = b:session.voice_text
 
   return rtn
-endfunction " }}}
-function! s:redraw() " {{{
+endfunction
+function! s:redraw()
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
@@ -229,9 +228,9 @@ function! s:redraw() " {{{
   call puyo#buffer#uniq_open("[puyo]",rtn,"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   redraw
-endfunction " }}}
+endfunction
 
-function! puyo#play_chain_sound(chain_count) " {{{
+function! puyo#play_chain_sound(chain_count)
   " Example: [[ 'C:/SEGA/PuyoF_ver2.0/SE/000RENSA1.WAV', 'C:/SEGA/PuyoF_ver2.0/VOICE/CH00VO00.WAV' ],...]
   let g:puyo#chain_sounds = get(g:,'puyo#chain_sounds', [])
   if ! empty(g:puyo#chain_sounds)
@@ -242,8 +241,8 @@ function! puyo#play_chain_sound(chain_count) " {{{
     catch
     endtry
   endif
-endfunction " }}}
-function! puyo#play_land_sound() " {{{
+endfunction
+function! puyo#play_land_sound()
   " Example: ['C:/SEGA/PuyoF_ver2.0/SE/009PUYOCHAKUTI.WAV']
   let g:puyo#land_sound = get(g:,'puyo#land_sound', [])
   if ! empty(g:puyo#land_sound)
@@ -252,10 +251,10 @@ function! puyo#play_land_sound() " {{{
     catch
     endtry
   endif
-endfunction " }}}
+endfunction
 
-" Algo {{{
-function! s:drop() " {{{
+" Algo
+function! s:drop()
   " initialize a field for setting puyos.
   let f = []
   for r in range(1,s:HIDDEN_ROW+s:FIELD_HEIGHT+1)
@@ -292,8 +291,8 @@ function! s:drop() " {{{
     endfor
   endfor
   let b:session.puyos = new_puyos
-endfunction " }}}
-function! s:recur_chain(puyos,row,col,kind) " {{{
+endfunction
+function! s:recur_chain(puyos,row,col,kind)
   let cnt = 0
   if a:kind isnot s:F
     for i in range(0,len(a:puyos)-1)
@@ -316,8 +315,8 @@ function! s:recur_chain(puyos,row,col,kind) " {{{
     endfor
   endif
   return cnt
-endfunction " }}}
-function! s:chain() " {{{
+endfunction
+function! s:chain()
   let chain_bonuses = [0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 388, 416, 448, 480, 512]
   let connect_bonuses = [0,2,3,4,5,6,7,10,10,10,10,10,10,10,10,10,10,10]
   let color_bonuses = [0,3,6,12,24]
@@ -377,8 +376,8 @@ function! s:chain() " {{{
   endwhile
 
   return chain_count
-endfunction " }}}
-function! s:check(is_auto_drop) " {{{
+endfunction
+function! s:check(is_auto_drop)
   let status = s:movable(b:session.dropping,1,0)
   if status is 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
     call puyo#play_land_sound()
@@ -391,8 +390,8 @@ function! s:check(is_auto_drop) " {{{
     let b:session.next2 = s:next_puyo()
     call s:chain()
   endif
-endfunction " }}}
-function! s:turn_puyo2(is_right) " {{{
+endfunction
+function! s:turn_puyo2(is_right)
   let state = [ b:session.dropping[1].row - b:session.dropping[0].row,
         \       b:session.dropping[1].col - b:session.dropping[0].col ]
   if state == [0,-1]
@@ -408,9 +407,9 @@ function! s:turn_puyo2(is_right) " {{{
     let b:session.dropping[0].row = b:session.dropping[1].row
     let b:session.dropping[0].col = b:session.dropping[1].col + (a:is_right ? 1 : -1)
   endif
-endfunction " }}}
+endfunction
 
-function! s:key_turn(is_right) " {{{
+function! s:key_turn(is_right)
   let saved_dropping_puyos = deepcopy(b:session.dropping)
 
   call s:turn_puyo2(a:is_right)
@@ -449,8 +448,8 @@ function! s:key_turn(is_right) " {{{
     call s:check(0)
   endif
   call s:redraw()
-endfunction " }}}
-function! s:move_puyo(row,col,puyos) " {{{
+endfunction
+function! s:move_puyo(row,col,puyos)
   let status = s:movable(a:puyos,a:row,a:col)
   if status is 1
     for puyo in a:puyos
@@ -459,8 +458,8 @@ function! s:move_puyo(row,col,puyos) " {{{
     endfor
   endif
   return status
-endfunction " }}}
-function! s:key_down() " {{{
+endfunction
+function! s:key_down()
   let status = s:movable(b:session.dropping,1,0)
   if 0 is status
     let s:floatting_count = s:MAX_FLOATTING_COUNT
@@ -476,13 +475,13 @@ function! s:key_down() " {{{
     endwhile
   endif
   call s:redraw()
-endfunction " }}}
-function! s:key_none() " {{{
+endfunction
+function! s:key_none()
   call s:redraw()
   " reset
   let s:floatting_count = 0
-endfunction " }}}
-function! s:key_quickdrop() " {{{
+endfunction
+function! s:key_quickdrop()
   while 1
     let status = s:move_puyo(1,0,b:session.dropping)
     if -1 is status
@@ -495,25 +494,25 @@ function! s:key_quickdrop() " {{{
   call s:redraw()
   " reset
   let s:floatting_count = 0
-endfunction " }}}
-function! s:key_right() " {{{
+endfunction
+function! s:key_right()
   call s:move_puyo(0,1,b:session.dropping)
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
   call s:redraw()
-endfunction " }}}
-function! s:key_left() " {{{
+endfunction
+function! s:key_left()
   call s:move_puyo(0,-1,b:session.dropping)
   let s:floatting_count += 1000
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
   call s:redraw()
-endfunction " }}}
-" }}}
-function! s:key_quit() " {{{
+endfunction
+
+function! s:key_quit()
   if &filetype is# "puyo"
     augroup Puyo
       autocmd!
@@ -530,8 +529,8 @@ function! s:key_quit() " {{{
     endif
     bdelete!
   endif
-endfunction " }}}
-function! s:auto() " {{{
+endfunction
+function! s:auto()
   if &filetype is# "puyo"
     try
       call s:key_down()
@@ -540,9 +539,10 @@ function! s:auto() " {{{
     endtry
     call feedkeys(mode() is# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
   endif
-endfunction " }}}
+endfunction
 
-function! puyo#new() " {{{
+function! puyo#start_game()
+  tabnew
   call puyo#buffer#uniq_open("[puyo]",[],"w")
   execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
   setlocal filetype=puyo
@@ -614,6 +614,5 @@ function! puyo#new() " {{{
     let &lines = 999
   endif
 
-endfunction " }}}
+endfunction
 
-"  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :

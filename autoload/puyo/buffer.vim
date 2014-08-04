@@ -1,17 +1,17 @@
 
-function! puyo#buffer#nrlist() " {{{
+function! puyo#buffer#nrlist()
   return  filter(range(1, bufnr("$")),"bufexists(v:val) && buflisted(v:val)")
-endfunction " }}}
-function! puyo#buffer#escape(bname) " {{{
+endfunction
+function! puyo#buffer#escape(bname)
   return '^' . join(map(split(a:bname, '\zs'), '"[".v:val."]"'), '') . '$'
-endfunction " }}}
-function! puyo#buffer#nr(bname) " {{{
+endfunction
+function! puyo#buffer#nr(bname)
   return bufnr(puyo#buffer#escape(a:bname))
-endfunction " }}}
-function! puyo#buffer#winnr(bname) " {{{
+endfunction
+function! puyo#buffer#winnr(bname)
   return bufwinnr(puyo#buffer#escape(a:bname))
-endfunction " }}}
-function! puyo#buffer#uniq_open(bname,lines,mode) " {{{
+endfunction
+function! puyo#buffer#uniq_open(bname,lines,mode)
   let curr_bufname = bufname('%')
 
   if ! bufexists(a:bname)
@@ -37,6 +37,5 @@ function! puyo#buffer#uniq_open(bname,lines,mode) " {{{
   endif
 
   execute bufwinnr(curr_bufname) 'wincmd w'
-endfunction " }}}
+endfunction
 
-"  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :

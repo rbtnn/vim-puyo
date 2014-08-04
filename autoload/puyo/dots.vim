@@ -1,6 +1,4 @@
 
-" let s:dir = expand('%:p:r')
-
 let s:colors = {
       \   'red'    : { 'value' : '@R' },
       \   'green'  : { 'value' : '@G' },
@@ -51,20 +49,20 @@ let s:images = {
       \   'wall'  : function('puyo#dots#wall#data'),
       \ }
 
-function! puyo#dots#width() " {{{
+function! puyo#dots#width()
   return 10
-endfunction " }}}
-function! puyo#dots#height() " {{{
+endfunction
+function! puyo#dots#height()
   return 7
-endfunction " }}}
-function! puyo#dots#images() " {{{
+endfunction
+function! puyo#dots#images()
   return s:images
-endfunction " }}}
-function! puyo#dots#colors() " {{{
+endfunction
+function! puyo#dots#colors()
   return s:colors
-endfunction " }}}
+endfunction
 
-function! puyo#dots#image2color_for_cui(img_fref) " {{{
+function! puyo#dots#image2color_for_cui(img_fref)
   if s:images.puyos.red is a:img_fref
     return s:colors.red.value
   elseif s:images.puyos.green is a:img_fref
@@ -82,10 +80,9 @@ function! puyo#dots#image2color_for_cui(img_fref) " {{{
   else
     return s:colors.wall.value
   endif
-endfunction " }}}
+endfunction
 
-function! puyo#dots#substitute_for_syntax(row) " {{{
+function! puyo#dots#substitute_for_syntax(row)
   return join(a:row,"")
-endfunction " }}}
+endfunction
 
-"  vim: set ts=2 sts=2 sw=2 ft=vim fdm=marker ff=unix :

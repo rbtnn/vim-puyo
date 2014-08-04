@@ -3,6 +3,10 @@
 
 ![](https://raw.github.com/rbtnn/puyo.vim/master/puyo.png)
 
+## 依存しているプラグイン
+
+* [rbtnn/game\_engine.vim](https://github.com/rbtnn/game_engine.vim)
+
 ## 始め方
 
         " ゲームを始める
@@ -18,3 +22,4 @@
 
 
 ※ これは[Vim Advent Calendar 2012](http://atnd.org/events/33746) : ATND 304日目になります。
+

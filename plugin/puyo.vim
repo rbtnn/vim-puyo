@@ -1,20 +1,12 @@
 
-
-scriptencoding utf-8
-"
-if exists("g:loaded_puyo")
-  finish
-endif
 let g:loaded_puyo = 1
+function! s:start_game()
+  try
+    call game_engine#version()
+    call puyo#start_game()
+  catch '.*'
+    throw 'Please install https://github.com/rbtnn/game_engine.vim'
+  endtry
+endfunction
+command! -nargs=0 Puyo  :call <sid>start_game()
 
-let s:save_cpo = &cpo
-set cpo&vim
-
-if !exists(":Puyo")
-  command! -nargs=0 Puyo :call puyo#new()
-endif
-
-let &cpo = s:save_cpo
-finish
-
-"  vim: set ft=vim fdm=marker ff=unix :
