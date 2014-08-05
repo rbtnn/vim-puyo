@@ -1,25 +1,6 @@
 
 scriptencoding utf-8
 
-let s:V = vital#of('game_engine.vim')
-let s:Random = s:V.import('Random.Xor128')
-let s:List = s:V.import('Data.List')
-call s:Random.srand()
-
-let s:unix_p = has('unix') && ! has('mac')
-let s:windows_p = has('win95') || has('win16') || has('win32') || has('win64')
-let s:cygwin_p = has('win32unix')
-let s:mac_p = ! s:windows_p
-      \ && ! s:cygwin_p
-      \ && (
-      \       has('mac')
-      \    || has('macunix')
-      \    || has('gui_macvim')
-      \    || (  ! executable('xdg-open')
-      \       && system('uname') =~? '^darwin'
-      \       )
-      \    )
-
 let s:clrs = puyo#dots#colors()
 let s:imgs = puyo#dots#images()
 
@@ -119,12 +100,12 @@ function! s:next_puyo()
         \   {
         \     'row' : 0,
         \     'col' : s:DROPPING_POINT,
-        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+        \     'kind' : s:puyo_colors[ game_engine#rand(b:session.number_of_colors) ],
         \   },
         \   {
         \     'row' : 1,
         \     'col' : s:DROPPING_POINT,
-        \     'kind' : s:puyo_colors[ abs(s:Random.rand()) % b:session.number_of_colors ],
+        \     'kind' : s:puyo_colors[ game_engine#rand(b:session.number_of_colors) ],
         \   },
         \ ]
 endfunction
@@ -181,7 +162,7 @@ function! s:redraw_gui(field)
   let test_field = []
   for row in field
     let data = map(deepcopy(row),'v:val()')
-    let test_field += map(call(s:List.zip, data), 's:List.concat(v:val)')
+    let test_field += map(call(b:session._.List.zip, data), 'b:session._.List.concat(v:val)')
   endfor
 
   let wallpaper = s:wallpaper()
@@ -206,7 +187,7 @@ function! s:redraw_gui(field)
 
   return rtn
 endfunction
-function! s:redraw()
+function! s:map2lines()
   let field = s:make_field_array(1)
 
   for i in range(0,s:HIDDEN_ROW-1)
@@ -225,9 +206,7 @@ function! s:redraw()
     let rtn = s:redraw_cui(field)
   endif
 
-  call puyo#buffer#uniq_open("[puyo]",rtn,"w")
-  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
-  redraw
+  return rtn
 endfunction
 
 function! puyo#play_chain_sound(chain_count)
@@ -363,10 +342,10 @@ function! s:chain()
 
       call puyo#play_chain_sound(chain_count)
 
-      call s:redraw()
+      call b:session.redraw(s:map2lines())
     else
       call s:drop()
-      call s:redraw()
+      call b:session.redraw(s:map2lines())
       break
     endif
   endwhile
@@ -447,7 +426,7 @@ function! s:key_turn(is_right)
     call s:key_down()
     call s:check(0)
   endif
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
 endfunction
 function! s:move_puyo(row,col,puyos)
   let status = s:movable(a:puyos,a:row,a:col)
@@ -474,10 +453,10 @@ function! s:key_down()
     while getchar(0)
     endwhile
   endif
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
 endfunction
 function! s:key_none()
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
   " reset
   let s:floatting_count = 0
 endfunction
@@ -491,7 +470,7 @@ function! s:key_quickdrop()
       break
     endif
   endwhile
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
   " reset
   let s:floatting_count = 0
 endfunction
@@ -501,7 +480,7 @@ function! s:key_right()
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
 endfunction
 function! s:key_left()
   call s:move_puyo(0,-1,b:session.dropping)
@@ -509,46 +488,18 @@ function! s:key_left()
   if s:MAX_FLOATTING_COUNT < s:floatting_count
     call s:key_down()
   endif
-  call s:redraw()
+  call b:session.redraw(s:map2lines())
 endfunction
 
-function! s:key_quit()
-  if &filetype is# "puyo"
-    augroup Puyo
-      autocmd!
-    augroup END
-
-    let &maxfuncdepth = b:session.backup.maxfuncdepth
-    let &guifont = b:session.backup.guifont
-    let &updatetime = b:session.backup.updatetime
-    let &titlestring = b:session.backup.titlestring
-    let &spell = b:session.backup.spell
-    if has('gui_running')
-      let &columns = b:session.backup.columns
-      let &lines = b:session.backup.lines
-    endif
-    bdelete!
-  endif
-endfunction
 function! s:auto()
-  if &filetype is# "puyo"
-    try
-      call s:key_down()
-      call s:check(1)
-    catch
-    endtry
-    call feedkeys(mode() is# 'i' ? "\<C-g>\<ESC>" : "g\<ESC>", 'n')
-  endif
+  call s:key_down()
+  call s:check(1)
 endfunction
 
 function! puyo#start_game()
-  tabnew
-  call puyo#buffer#uniq_open("[puyo]",[],"w")
-  execute printf("%dwincmd w",puyo#buffer#winnr("[puyo]"))
-  setlocal filetype=puyo
-  only
+  call game_engine#start_game('[puyo]', function('s:auto'))
 
-  let b:session = {
+  call extend(b:session, {
         \   'puyos' : [],
         \   'n_chain_count' : 0,
         \   'score' : 0,
@@ -564,55 +515,26 @@ function! puyo#start_game()
         \     'ジュゲム',
         \     'ばよえ～ん',
         \     ]),
-        \   'backup' : {
-        \     'guifont' : &guifont,
-        \     'spell' : &spell,
-        \     'updatetime' : &updatetime,
-        \     'maxfuncdepth' : &maxfuncdepth,
-        \     'titlestring' : &titlestring,
-        \     'columns' : &columns,
-        \     'lines' : &lines,
-        \   },
-        \ }
+        \ })
   let b:session['dropping'] = s:next_puyo()
   let b:session['next1'] = s:next_puyo()
   let b:session['next2'] = s:next_puyo()
 
-
   let &l:updatetime = get(g:,'puyo#updatetime',500)
   let &l:maxfuncdepth = 1000
-  let &l:spell = 0
 
   if exists('g:puyo#guifont')
     let &l:guifont = g:puyo#guifont
-  elseif s:windows_p
-    setlocal guifont=Consolas:h2:cSHIFTJIS
-  elseif s:mac_p
-    setlocal guifont=Menlo\ Regular:h5
-  elseif s:unix_p
-    setlocal guifont=Monospace\ 2
-  else
   endif
 
-  nnoremap <silent><buffer> j :call <sid>key_down() \| call <sid>check(0)<cr>
-  nnoremap <silent><buffer> k :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
-  nnoremap <silent><buffer> h :call <sid>key_left()<cr>
-  nnoremap <silent><buffer> l :call <sid>key_right()<cr>
-  nnoremap <silent><buffer> z :call <sid>key_turn(0)<cr>
-  nnoremap <silent><buffer> x :call <sid>key_turn(1)<cr>
-  nnoremap <silent><buffer> q :call <sid>key_quit()<cr>
+  nnoremap <silent><buffer><nowait> j       :call <sid>key_down() \| call <sid>check(0)<cr>
+  nnoremap <silent><buffer><nowait> k       :call <sid>key_quickdrop() \| call <sid>check(0)<cr>
+  nnoremap <silent><buffer><nowait> h       :call <sid>key_left()<cr>
+  nnoremap <silent><buffer><nowait> l       :call <sid>key_right()<cr>
+  nnoremap <silent><buffer><nowait> z       :call <sid>key_turn(0)<cr>
+  nnoremap <silent><buffer><nowait> x       :call <sid>key_turn(1)<cr>
+  nnoremap <silent><buffer><nowait> q       :call game_engine#exit_game()<cr>
 
-  augroup Puyo
-    autocmd!
-    autocmd CursorHold,CursorHoldI * call s:auto()
-  augroup END
-
-  call s:redraw()
-
-  if has('gui_running')
-    let &columns = 9999
-    let &lines = 999
-  endif
-
+  call b:session.redraw(s:map2lines())
 endfunction
 
