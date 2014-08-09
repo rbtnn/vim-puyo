@@ -18,7 +18,7 @@
 * h key : Move puyos to the left.
 * l key : Move puyos to the right.
 * j key : Move puyos to the down.
-* q key : exit mario.vim(same as GameOver).
+* q key : exit puyo.vim(same as GameOver).
 
 
 ## Dependency plugin
