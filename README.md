@@ -1,25 +1,27 @@
 
-# Vimでぷよぷよ -- puyo.vim --
+# Puyo on Vim
 
-![](https://raw.github.com/rbtnn/puyo.vim/master/puyo.png)
+![](https://raw.github.com/rbtnn/puyo.vim/master/puyo.gif)
 
-## 依存しているプラグイン
 
-* [rbtnn/game\_engine.vim](https://github.com/rbtnn/game_engine.vim)
+## USAGE
 
-## 始め方
-
-        " ゲームを始める
+        " Play puyo.vim
         :Puyo
 
-## 操作方法
 
-* kでクイックドロップ  
-* h,j,lで移動  
-* zで左回転  
-* xで右回転  
-* qで終了  
+## How-to
+
+* k key : Quick-Drop.
+* x key : Left-Handed Rotation.
+* z key : Right-Handed Rotation.
+* h key : Move puyos to the left.
+* l key : Move puyos to the right.
+* j key : Move puyos to the down.
+* q key : exit mario.vim(same as GameOver).
 
 
-※ これは[Vim Advent Calendar 2012](http://atnd.org/events/33746) : ATND 304日目になります。
+## Dependency plugin
+
+* [rbtnn/game\_engine.vim](https://github.com/rbtnn/game_engine.vim)
 
