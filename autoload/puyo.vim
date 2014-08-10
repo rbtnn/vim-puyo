@@ -1,45 +1,12 @@
 
 scriptencoding utf-8
 
-let s:clrs = puyo#dots#colors()
-let s:imgs = puyo#dots#images()
-
-let s:wallpaper = s:imgs.wallpapers.defaut
-let s:W = s:imgs.wall
-let s:F = s:imgs.field
-let s:numbers = [
-      \ s:imgs.numbers.zero,
-      \ s:imgs.numbers.one,
-      \ s:imgs.numbers.two,
-      \ s:imgs.numbers.three,
-      \ s:imgs.numbers.four,
-      \ s:imgs.numbers.five,
-      \ s:imgs.numbers.six,
-      \ s:imgs.numbers.seven,
-      \ s:imgs.numbers.eight,
-      \ s:imgs.numbers.nine,
-      \ ]
-let s:puyo_colors = [
-      \ s:imgs.puyos.red,
-      \ s:imgs.puyos.blue,
-      \ s:imgs.puyos.yellow,
-      \ s:imgs.puyos.green,
-      \ s:imgs.puyos.purple,
-      \ ]
-let s:gameover_chars = [
-      \ s:imgs.hiragana.ba,
-      \ s:imgs.hiragana.ta,
-      \ s:imgs.hiragana.nn,
-      \ s:imgs.hiragana.ki,
-      \ s:imgs.hiragana.lyu,
-      \ s:imgs.hiragana.__,
-      \ ]
-let s:chain_chars = [
-      \ s:imgs.hiragana.re,
-      \ s:imgs.hiragana.nn,
-      \ s:imgs.hiragana.sa,
-      \ ]
-
+let s:W = 'puyo#dots#wall#data'
+let s:F = 'puyo#dots#field#data'
+let s:numbers = puyo#dots#numbers()
+let s:puyo_colors = puyo#dots#puyo_colors()
+let s:gameover_chars = puyo#dots#gameover_chars()
+let s:chain_chars = puyo#dots#chain_chars()
 
 let s:HIDDEN_ROW = 2
 let s:FIELD_WIDTH = 6
@@ -111,6 +78,7 @@ function! s:next_puyo()
 endfunction
 
 function! s:redraw_cui(field)
+  let g:temp_field = a:field
   let field = []
   for row_ in a:field
     let field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
@@ -118,7 +86,7 @@ function! s:redraw_cui(field)
 
   let rtn = []
   for row in field
-    let rtn += [puyo#dots#substitute_for_syntax(row)]
+    let rtn += [join(row, "")]
   endfor
 
   if b:session.is_gameover
@@ -127,8 +95,6 @@ function! s:redraw_cui(field)
     let rtn[9] .= printf('%d連鎖',b:session.n_chain_count)
   endif
   let rtn[11] .= 'score:' . printf('%08d',b:session.score)
-
-  " let rtn += [b:session.voice_text]
 
   return rtn
 endfunction
@@ -158,34 +124,7 @@ function! s:redraw_gui(field)
   let field[11] += score_ary
   let field[12] += repeat([s:W],8)
 
-
-  let test_field = []
-  for row in field
-    let data = map(deepcopy(row),'v:val()')
-    let test_field += map(call(b:session._.List.zip, data), 'b:session._.List.concat(v:val)')
-  endfor
-
-  let wallpaper = s:wallpaper()
-  let row_idx = 0
-  for _row in wallpaper
-    let col_idx = 0
-    for dot in _row
-      if test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] is s:clrs.field.value
-        let test_field[s:HIDDEN_ROW * puyo#dots#height() + row_idx][1 * puyo#dots#width() + col_idx] = dot
-      endif
-      let col_idx += 1
-    endfor
-    let row_idx += 1
-  endfor
-
-  let rtn = []
-  for row in test_field
-    let rtn += [puyo#dots#substitute_for_syntax(row)]
-  endfor
-
-  let &titlestring = b:session.voice_text
-
-  return rtn
+  return map(game_engine#scale2d(deepcopy(field), puyo#dots#all(), puyo#dots#wall#data()), 'join(v:val, "")')
 endfunction
 function! s:map2lines()
   let field = s:make_field_array(1)
@@ -232,7 +171,6 @@ function! puyo#play_land_sound()
   endif
 endfunction
 
-" Algo
 function! s:drop()
   " initialize a field for setting puyos.
   let f = []
@@ -337,7 +275,6 @@ function! s:chain()
       endif
       sleep 700m
       call s:drop()
-      let b:session.voice_text = get( b:session.chain_voices, chain_count-1, b:session.chain_voices[-1])
       let b:session.n_chain_count = chain_count
 
       call puyo#play_chain_sound(chain_count)
@@ -361,7 +298,6 @@ function! s:check(is_auto_drop)
   if status is 0 && (a:is_auto_drop ? (s:floatting_count >= s:MAX_FLOATTING_COUNT) : 1)
     call puyo#play_land_sound()
 
-    let b:session.voice_text = ''
     let b:session.n_chain_count = 0
     let b:session.puyos += b:session.dropping
     let b:session.dropping = b:session.next1
@@ -503,18 +439,8 @@ function! puyo#start_game()
         \   'puyos' : [],
         \   'n_chain_count' : 0,
         \   'score' : 0,
-        \   'voice_text' : '',
         \   'is_gameover' : 0,
         \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
-        \   'chain_voices' : get(g:,'puyo#chain_voices',[
-        \     'えいっ',
-        \     'ファイヤー',
-        \     'アイスストーム',
-        \     'ダイアキュート',
-        \     'ブレインダムド',
-        \     'ジュゲム',
-        \     'ばよえ～ん',
-        \     ]),
         \ })
   let b:session['dropping'] = s:next_puyo()
   let b:session['next1'] = s:next_puyo()

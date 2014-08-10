@@ -1,5 +1,4 @@
 
-
 " Puyo colors
 let s:colors = puyo#dots#colors()
 let s:R = s:colors.red.value

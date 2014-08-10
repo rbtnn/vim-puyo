@@ -3,7 +3,7 @@ let s:colors = puyo#dots#colors()
 let s:F = s:colors.wall.value
 
 function! puyo#dots#hiragana#__#data()
-  let me = s:colors.white.value
+  let me = s:colors.white.text
   return [
         \ [s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F],
         \ [s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F],
@@ -14,5 +14,4 @@ function! puyo#dots#hiragana#__#data()
         \ [s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F,s:F],
         \ ]
 endfunction
-
 
