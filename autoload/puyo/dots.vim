@@ -24,7 +24,6 @@ function! puyo#dots#all()
           \   'puyo#dots#numbers#seven#data' : puyo#dots#numbers#seven#data(),
           \   'puyo#dots#numbers#eight#data' : puyo#dots#numbers#eight#data(),
           \   'puyo#dots#numbers#nine#data' : puyo#dots#numbers#nine#data(),
-          \   'puyo#dots#wallpapers#default#data' : puyo#dots#wallpapers#default#data(),
           \   'puyo#dots#hiragana#__#data' : puyo#dots#hiragana#__#data(),
           \   'puyo#dots#hiragana#ba#data' : puyo#dots#hiragana#ba#data(),
           \   'puyo#dots#hiragana#ki#data' : puyo#dots#hiragana#ki#data(),

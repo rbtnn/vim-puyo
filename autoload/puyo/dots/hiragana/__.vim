@@ -1,6 +1,6 @@
 
 let s:colors = puyo#dots#colors()
-let s:F = s:colors.wall.value
+let s:F = s:colors.wall.text
 
 function! puyo#dots#hiragana#__#data()
   let me = s:colors.white.text

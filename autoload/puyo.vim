@@ -78,25 +78,19 @@ function! s:next_puyo()
 endfunction
 
 function! s:redraw_cui(field)
-  let g:temp_field = a:field
   let field = []
   for row_ in a:field
-    let field += [map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)')]
-  endfor
-
-  let rtn = []
-  for row in field
-    let rtn += [join(row, "")]
+    let field += [ join(map(deepcopy(row_),'puyo#dots#image2color_for_cui(v:val)'), "") ]
   endfor
 
   if b:session.is_gameover
-    let rtn[9] .= 'ばたんきゅー'
+    let field[9] .= 'ばたんきゅー'
   else
-    let rtn[9] .= printf('%d連鎖',b:session.n_chain_count)
+    let field[9] .= printf('%d連鎖', b:session.n_chain_count)
   endif
-  let rtn[11] .= 'score:' . printf('%08d',b:session.score)
+  let field[11] .= 'score:' . printf('%08d', b:session.score)
 
-  return rtn
+  return field
 endfunction
 function! s:redraw_gui(field)
   let field = a:field
@@ -124,7 +118,7 @@ function! s:redraw_gui(field)
   let field[11] += score_ary
   let field[12] += repeat([s:W],8)
 
-  return map(game_engine#scale2d(deepcopy(field), puyo#dots#all(), puyo#dots#wall#data()), 'join(v:val, "")')
+  return map(game_engine#scale2d(deepcopy(field[1:]), puyo#dots#all(), puyo#dots#wall#data()), 'join(v:val, "")')
 endfunction
 function! s:map2lines()
   let field = s:make_field_array(1)
@@ -440,7 +434,7 @@ function! puyo#start_game()
         \   'n_chain_count' : 0,
         \   'score' : 0,
         \   'is_gameover' : 0,
-        \   'number_of_colors' : get(g:,'puyo#number_of_colors',4),
+        \   'number_of_colors' : get(g:,'puyo#number_of_colors', 4),
         \ })
   let b:session['dropping'] = s:next_puyo()
   let b:session['next1'] = s:next_puyo()
@@ -460,6 +454,8 @@ function! puyo#start_game()
   nnoremap <silent><buffer><nowait> z       :call <sid>key_turn(0)<cr>
   nnoremap <silent><buffer><nowait> x       :call <sid>key_turn(1)<cr>
   nnoremap <silent><buffer><nowait> q       :call game_engine#exit_game()<cr>
+  nnoremap <silent><buffer><nowait> S       :call game_engine#save_game('[puyo]', 1)<cr>
+  nnoremap <silent><buffer><nowait> L       :call game_engine#load_game('[puyo]', 1)<cr>
 
   call b:session.redraw(s:map2lines())
 endfunction
