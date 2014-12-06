@@ -1,15 +1,15 @@
 
 " Puyo colors
 let s:colors = puyo#dots#colors()
-let s:R = s:colors.red.text
-let s:G = s:colors.green.text
-let s:B = s:colors.blue.text
-let s:Y = s:colors.yellow.text
-let s:P = s:colors.purple.text
-let s:F = s:colors.field.text
-let s:W = s:colors.wall.text
-let s:E = s:colors.eye.text
-let s:H = s:colors.white.text
+let s:R = s:colors.Red.text
+let s:G = s:colors.Green.text
+let s:B = s:colors.Blue.text
+let s:Y = s:colors.Yellow.text
+let s:P = s:colors.Magenta.text
+let s:F = s:colors.Field.text
+let s:W = s:colors.Wall.text
+let s:E = s:colors.Eye.text
+let s:H = s:colors.White.text
 
 function! puyo#dots#puyos#yellow#data()
   let me = s:Y

@@ -13,7 +13,7 @@ function! puyo#dots#all()
           \   'puyo#dots#puyos#blue#data' : puyo#dots#puyos#blue#data(),
           \   'puyo#dots#puyos#yellow#data' : puyo#dots#puyos#yellow#data(),
           \   'puyo#dots#puyos#green#data' : puyo#dots#puyos#green#data(),
-          \   'puyo#dots#puyos#purple#data' : puyo#dots#puyos#purple#data(),
+          \   'puyo#dots#puyos#magenta#data' : puyo#dots#puyos#magenta#data(),
           \   'puyo#dots#numbers#zero#data' : puyo#dots#numbers#zero#data(),
           \   'puyo#dots#numbers#one#data' : puyo#dots#numbers#one#data(),
           \   'puyo#dots#numbers#two#data' : puyo#dots#numbers#two#data(),
@@ -45,7 +45,7 @@ function! puyo#dots#puyo_colors()
         \ 'puyo#dots#puyos#blue#data',
         \ 'puyo#dots#puyos#yellow#data',
         \ 'puyo#dots#puyos#green#data',
-        \ 'puyo#dots#puyos#purple#data',
+        \ 'puyo#dots#puyos#magenta#data',
         \ ]
 endfunction
 function! puyo#dots#gameover_chars()
@@ -83,9 +83,9 @@ endfunction
 function! puyo#dots#colors()
   if !exists('s:colors')
     let s:colors = game_engine#syntax()
-    let s:colors['eye'] = s:colors['black']
-    let s:colors['field'] =  s:colors['gray']
-    let s:colors['wall'] = s:colors['black']
+    let s:colors['Eye'] = s:colors['Black']
+    let s:colors['Field'] =  s:colors['Gray']
+    let s:colors['Wall'] = s:colors['Black']
   endif
   return s:colors
 endfunction
@@ -93,21 +93,21 @@ endfunction
 function! puyo#dots#image2color_for_cui(img)
   let colors = puyo#dots#colors()
   if 'puyo#dots#puyos#red#data' is a:img
-    return colors.red.text
+    return colors.Red.text
   elseif 'puyo#dots#puyos#green#data' is a:img
-    return colors.green.text
+    return colors.Green.text
   elseif 'puyo#dots#puyos#yellow#data' is a:img
-    return colors.yellow.text
+    return colors.Yellow.text
   elseif 'puyo#dots#puyos#blue#data' is a:img
-    return colors.blue.text
-  elseif 'puyo#dots#puyos#purple#data' is a:img
-    return colors.purple.text
+    return colors.Blue.text
+  elseif 'puyo#dots#puyos#magenta#data' is a:img
+    return colors.Magenta.text
   elseif 'puyo#dots#field#data' is a:img
-    return colors.field.text
+    return colors.Field.text
   elseif 'puyo#dots#wall#data' is a:img
-    return colors.wall.text
+    return colors.Wall.text
   else
-    return colors.wall.text
+    return colors.Wall.text
   endif
 endfunction
 
